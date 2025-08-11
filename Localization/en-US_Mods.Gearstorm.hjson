@@ -1,0 +1,29 @@
+// Tooltips globais para Beyblades
+Items: {
+	BeybladeStatsHeader: --- Beyblade Stats ---
+
+	BeybladeStats: {
+		Damage: Base Damage: {0}
+		Mass: Mass: {0}
+		Density: Density: {0}
+		SpinSpeed: Spin Speed: {0}
+		Balance: Balance: {0}
+		TipFriction: Tip Friction: -{0}
+		KnockbackPower: Knockback Power: {0}
+		KnockbackResistance: Knockback Resist: {0}
+		MoveSpeed: Move Speed: {0}
+	}
+
+	StarterBey: {
+		DisplayName: Lowest Grade Beyblade
+		Tooltip: "So Rustic! At least good enough to hit the enemies, i guess."
+	}
+}
+
+StarterBey: {
+	DisplayName: Lowest Grade Beyblade
+	Tooltip: So Rustic! At least good enough to hit the enemies, i guess.
+}
+
+DamageClasses.Spinner.DisplayName: Spinner Damage
+Projectiles.StarterBeyProjectile.DisplayName: Starter Bey
