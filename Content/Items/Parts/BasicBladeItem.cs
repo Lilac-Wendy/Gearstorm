@@ -2,8 +2,8 @@
 using Terraria.ID;
 using Terraria.ModLoader;
 using Gearstorm.Content.Data;
-using Gearstorm.GlobalItems;
 
+// Bazinga //
 namespace Gearstorm.Content.Items.Parts
 {
     public class BasicBladeItem : ModItem, IHasBeybladeStats

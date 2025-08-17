@@ -12,9 +12,6 @@ Items: {
 		KnockbackPower: Knockback Power: {0}
 		KnockbackResistance: Knockback Resist: {0}
 		MoveSpeed: Move Speed: {0}
-		Height: Height: {0}
-		Radius: Radius: {0}
-		SpinDecay: Spin Decay: {0}
 	}
 
 	StarterBey: {
