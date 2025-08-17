@@ -12,11 +12,34 @@ Items: {
 		KnockbackPower: Knockback Power: {0}
 		KnockbackResistance: Knockback Resist: {0}
 		MoveSpeed: Move Speed: {0}
+		Height: Height: {0}
+		Radius: Radius: {0}
+		SpinDecay: Spin Decay: {0}
 	}
 
 	StarterBey: {
 		DisplayName: Lowest Grade Beyblade
-		Tooltip: "So Rustic! At least good enough to hit the enemies, i guess."
+		Tooltip: So Rustic! At least good enough to hit the enemies, i guess.
+	}
+
+	AirTrek: {
+		DisplayName: Air Trek
+		Tooltip: ""
+	}
+
+	BasicBaseItem: {
+		DisplayName: Basic Base Item
+		Tooltip: ""
+	}
+
+	BasicBladeItem: {
+		DisplayName: Basic Blade Item
+		Tooltip: ""
+	}
+
+	BasicTopItem: {
+		DisplayName: Basic Top Item
+		Tooltip: ""
 	}
 }
 
@@ -25,5 +48,9 @@ StarterBey: {
 	Tooltip: So Rustic! At least good enough to hit the enemies, i guess.
 }
 
-DamageClasses.Spinner.DisplayName: Spinner Damage
+DamageClasses: {
+	Spinner.DisplayName: Spinner Damage
+	AirTrekDamage.DisplayName: Air Trek Damage
+}
+
 Projectiles.StarterBeyProjectile.DisplayName: Starter Bey
