@@ -2,7 +2,7 @@
 using Terraria.ID;
 using Terraria.ModLoader;
 using Gearstorm.Content.Data;
-// Bazinga //
+
 namespace Gearstorm.Content.Items.Parts
 {
     public class BasicTopItem : ModItem, IHasBeybladeStats
@@ -12,7 +12,7 @@ namespace Gearstorm.Content.Items.Parts
         public BeybladeStats Stats => new BeybladeStats(
             mass: 1.0f,
             balance: 0.85f,
-            Height: 0.5f
+            Height: 1.0f
         );
         
 

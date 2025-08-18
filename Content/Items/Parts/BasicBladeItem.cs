@@ -3,7 +3,6 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using Gearstorm.Content.Data;
 
-// Bazinga //
 namespace Gearstorm.Content.Items.Parts
 {
     public class BasicBladeItem : ModItem, IHasBeybladeStats
@@ -11,7 +10,7 @@ namespace Gearstorm.Content.Items.Parts
         public override string Texture => "Gearstorm/Assets/Items/Parts/Blade_Default";
 
         public BeybladeStats Stats => new BeybladeStats(
-            damageBase: 15f,
+            damageBase: 10f,
             knockbackPower: 3.0f,  
             knockbackResistance: 1.8f, 
             Radius: 0.5f,

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using Gearstorm.Content.DamageClasses;
+using Gearstorm.Content.Items;
+using Gearstorm.Content.Items.Parts;
 using Gearstorm.Content.Projectiles.Beyblades;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -16,30 +18,54 @@ namespace Gearstorm.Content.Data
             return item.DamageType == ModContent.GetInstance<Spinner>();
         }
         
-        public override void ModifyTooltips(Item item, List<TooltipLine> tooltips)
-        {
-            if (item.shoot <= 0) return;
+public override void ModifyTooltips(Item item, List<TooltipLine> tooltips)
+{
+    // Só aplica em itens que sejam do tipo Spinner
+    if (item.DamageType != ModContent.GetInstance<Spinner>())
+        return;
 
-            var proj = ModContent.GetModProjectile(item.shoot);
-    
-            // Verifique diretamente por BaseBeybladeProjectile
-            if (proj is not BaseBeybladeProjectile bey) return;
-    
-            tooltips.Add(new TooltipLine(Mod, "BeyHeader", Language.GetTextValue("Mods.Gearstorm.Items.BeybladeStatsHeader")) { 
-                OverrideColor = Color.Gold 
-            });
+    // Garante que tem um projectile associado
+    if (item.shoot <= 0)
+        return;
 
-            // Adicione todas as estatísticas usando o método auxiliar
-            AddBeybladeStatTooltip(tooltips, "Damage", bey.DamageBase.ToString("F1"), Color.Red);
-            AddBeybladeStatTooltip(tooltips, "Mass", bey.Mass.ToString("F2"), Color.Yellow);
-            AddBeybladeStatTooltip(tooltips, "Density", bey.stats.Density.ToString("F2"), Color.Orange);
-            AddBeybladeStatTooltip(tooltips, "SpinSpeed", bey.SpinSpeedProp.ToString("F2"), Color.LightGreen);
-            AddBeybladeStatTooltip(tooltips, "Balance", bey.Balance.ToString("F2"), Color.Cyan);
-            AddBeybladeStatTooltip(tooltips, "TipFriction", bey.TipFriction.ToString("F3"), Color.Gray);
-            AddBeybladeStatTooltip(tooltips, "KnockbackPower", bey.stats.KnockbackPower.ToString("F1"), Color.Pink);
-            AddBeybladeStatTooltip(tooltips, "KnockbackResistance", bey.stats.KnockbackResistance.ToString("F1"), Color.Violet);
-            AddBeybladeStatTooltip(tooltips, "MoveSpeed", bey.stats.MoveSpeed.ToString("F1"), Color.Lime);
-        }
+    // Cria instância temporária do projectile
+    Projectile dummyProj = new Projectile();
+    dummyProj.SetDefaults(item.shoot);
+
+    if (dummyProj.ModProjectile is not BaseBeybladeProjectile beyProj)
+        return;
+
+    // 🔹 Inicializa os stats manualmente
+    // Aqui você pode injetar a mesma lógica que usaria em Shoot()
+    if (item.ModItem is StarterBeyItem)
+    {
+        var basePart = new BasicBaseItem();
+        var bladePart = new BasicBladeItem();
+        var topPart = new BasicTopItem();
+
+        beyProj.stats = BeybladeCombiner.CombineStats(basePart, bladePart, topPart);
+    }
+
+    // Adiciona o cabeçalho
+    tooltips.Add(new TooltipLine(Mod, "BeyHeader", 
+        Language.GetTextValue("Mods.Gearstorm.Items.BeybladeStatsHeader"))
+    {
+        OverrideColor = Color.Gold
+    });
+
+    // Adiciona os atributos
+    AddBeybladeStatTooltip(tooltips, "Damage", beyProj.stats.DamageBase.ToString("F1"), Color.Red);
+    AddBeybladeStatTooltip(tooltips, "Mass", beyProj.stats.Mass.ToString("F2"), Color.Yellow);
+    AddBeybladeStatTooltip(tooltips, "Density", beyProj.stats.Density.ToString("F2"), Color.Orange);
+    AddBeybladeStatTooltip(tooltips, "SpinSpeed", beyProj.stats.SpinSpeed.ToString("F2"), Color.LightGreen);
+    AddBeybladeStatTooltip(tooltips, "Balance", beyProj.stats.Balance.ToString("F2"), Color.Cyan);
+    AddBeybladeStatTooltip(tooltips, "TipFriction", beyProj.stats.TipFriction.ToString("F3"), Color.Gray);
+    AddBeybladeStatTooltip(tooltips, "KnockbackPower", beyProj.stats.KnockbackPower.ToString("F1"), Color.Pink);
+    AddBeybladeStatTooltip(tooltips, "KnockbackResistance", beyProj.stats.KnockbackResistance.ToString("F1"), Color.Violet);
+    AddBeybladeStatTooltip(tooltips, "MoveSpeed", beyProj.stats.MoveSpeed.ToString("F1"), Color.Lime);
+}
+
+
         
         private void AddBeybladeStatTooltip(List<TooltipLine> tooltips, string statKey, string value, Color color)
         {

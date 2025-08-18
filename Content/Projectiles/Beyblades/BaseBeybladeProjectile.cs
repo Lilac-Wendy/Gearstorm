@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Gearstorm.Content.DamageClasses;
+using Gearstorm.Content.Data;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -10,57 +11,7 @@ using Terraria.ModLoader;
 // Bazinga //
 namespace Gearstorm.Content.Projectiles.Beyblades;
 
-public struct BeybladeStats
-{
-    public float Mass;
-    public float Density;
-    public float Height;
-    public float Radius;
-    public float TipFriction;
-    public float SpinSpeed;
-    public float SpinDecay;
-    public float Balance;
-    public float KnockbackPower;
-    public float KnockbackResistance;
-    public float MoveSpeed;
-    public float DamageBase;
-    public float MomentOfInertia;
 
-    public BeybladeStats(
-        float mass = 0,
-        float density = 0,
-        float height = 0,
-        float radius = 0,
-        float tipFriction = 0,
-        float spinSpeed = 0,
-        float spinDecay = 0,
-        float balance = 0,
-        float knockbackPower = 0,
-        float knockbackResistance = 0,
-        float moveSpeed = 0,
-        float damageBase = 0)
-    {
-        Mass = mass;
-        Density = density;
-        Height = height;
-        Radius = radius;
-        TipFriction = tipFriction;
-        SpinSpeed = spinSpeed;
-        SpinDecay = spinDecay;
-        Balance = balance;
-        KnockbackPower = knockbackPower;
-        KnockbackResistance = knockbackResistance;
-        MoveSpeed = moveSpeed;
-        DamageBase = damageBase;
-        MomentOfInertia = CalculateMomentOfInertia(mass, density, radius);
-    }
-
-    private static float CalculateMomentOfInertia(float mass, float density, float radius)
-    {
-        float baseInertia = 0.5f * mass * radius * radius;
-        return baseInertia * (1f + density * 0.3f);
-    }
-}
 
 public abstract class BaseBeybladeProjectile : ModProjectile 
 {

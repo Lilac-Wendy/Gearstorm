@@ -1,5 +1,5 @@
 ﻿    using Terraria.ModLoader;
-// Bazinga //
+
     namespace Gearstorm.Content.DamageClasses
     {
         public class Spinner : DamageClass
