@@ -1,13 +1,13 @@
 ﻿using Gearstorm.Content.DamageClasses;
 using Gearstorm.Content.Data;
-using Terraria;
-using Terraria.ID;
-using Terraria.ModLoader;
 using Gearstorm.Content.Items.Parts;
 using Gearstorm.Content.Projectiles.Beyblades;
 using Microsoft.Xna.Framework;
+using Terraria;
+using Terraria.ID;
+using Terraria.ModLoader;
 
-namespace Gearstorm.Content.Items
+namespace Gearstorm.Content.Items.Beyblades
 {
     public class StarterBeyItem : ModItem
     {

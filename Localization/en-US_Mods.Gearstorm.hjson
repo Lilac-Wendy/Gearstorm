@@ -12,6 +12,9 @@ Items: {
 		KnockbackPower: Knockback Power: {0}
 		KnockbackResistance: Knockback Resist: {0}
 		MoveSpeed: Move Speed: {0}
+		Height: Height: {0}
+		Radius: Radius: {0}
+		SpinDecay: Spin Decay: {0}
 	}
 
 	StarterBey: {
@@ -36,6 +39,41 @@ Items: {
 
 	BasicTopItem: {
 		DisplayName: Basic Top Item
+		Tooltip: ""
+	}
+
+	StarterBeyItem: {
+		DisplayName: Starter Bey Item
+		Tooltip: ""
+	}
+
+	ChlorophyteAugment: {
+		DisplayName: Chlorophyte Augment
+		Tooltip: ""
+	}
+
+	FireAugment: {
+		DisplayName: Fire Augment
+		Tooltip: ""
+	}
+
+	CrystalAugment: {
+		DisplayName: Crystal Augment
+		Tooltip: ""
+	}
+
+	ExplosionAugment: {
+		DisplayName: Explosion Augment
+		Tooltip: ""
+	}
+
+	FrostAugment: {
+		DisplayName: Frost Augment
+		Tooltip: ""
+	}
+
+	PoisonAugment: {
+		DisplayName: Poison Augment
 		Tooltip: ""
 	}
 }

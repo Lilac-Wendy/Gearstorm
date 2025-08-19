@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Gearstorm.Content.DamageClasses;
 using Gearstorm.Content.Items;
+using Gearstorm.Content.Items.Beyblades;
 using Gearstorm.Content.Items.Parts;
 using Gearstorm.Content.Projectiles.Beyblades;
 using Microsoft.Xna.Framework;
