@@ -11,9 +11,12 @@ namespace Gearstorm.Content.Items.Augments;
 public class CrystalAugment : BeybladeAugment
 {
     public override string Texture => "Gearstorm/Assets/Items/Parts/Augment";
-
-    // Define a cor para o rastro do projétil
     public override Color AugmentColor => Color.Cyan;
+
+    // Agora expõe o texto no localization
+    public override string AugmentDescriptionKey => "Mods.Gearstorm.Augments.Crystal.Description";
+
+    // Esse augment aumenta dano indireto via shards → pode colocar um multiplicador
 
     public override void PostDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
     {
@@ -28,12 +31,17 @@ public class CrystalAugment : BeybladeAugment
         
         for (int i = 0; i < 3; i++)
         {
-            Vector2 shardVelocity = new Vector2(Main.rand.NextFloat(-4f, 4f), Main.rand.NextFloat(-4f, 4f));
-            Projectile.NewProjectile(beybladeProj.Projectile.GetSource_FromThis(), beybladeProj.Projectile.Center, shardVelocity, ProjectileID.CrystalShard, shardDamage, 2f, Main.player[beybladeProj.Projectile.owner].whoAmI);
+            Vector2 shardVelocity = new(Main.rand.NextFloat(-4f, 4f), Main.rand.NextFloat(-4f, 4f));
+            Projectile.NewProjectile(
+                beybladeProj.Projectile.GetSource_FromThis(), 
+                beybladeProj.Projectile.Center, shardVelocity, 
+                ProjectileID.CrystalShard, shardDamage, 2f, 
+                Main.player[beybladeProj.Projectile.owner].whoAmI);
         }
+
         if (!beybladeProj.bonusesApplied)
         {
-            beybladeProj.Projectile.timeLeft = 60;
+            beybladeProj.Projectile.timeLeft = 120;
             beybladeProj.Projectile.penetrate = 1;
             beybladeProj.bonusesApplied = true;
         }

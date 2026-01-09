@@ -55,15 +55,15 @@ public override void ModifyTooltips(Item item, List<TooltipLine> tooltips)
     });
 
     // Adiciona os atributos
-    AddBeybladeStatTooltip(tooltips, "Damage", beyProj.stats.DamageBase.ToString("F1"), Color.Red);
+    AddBeybladeStatTooltip(tooltips, "Damage", beyProj.stats.DamageBase.ToString("F0"), Color.Red);
     AddBeybladeStatTooltip(tooltips, "Mass", beyProj.stats.Mass.ToString("F2"), Color.Yellow);
     AddBeybladeStatTooltip(tooltips, "Density", beyProj.stats.Density.ToString("F2"), Color.Orange);
     AddBeybladeStatTooltip(tooltips, "SpinSpeed", beyProj.stats.SpinSpeed.ToString("F2"), Color.LightGreen);
     AddBeybladeStatTooltip(tooltips, "Balance", beyProj.stats.Balance.ToString("F2"), Color.Cyan);
-    AddBeybladeStatTooltip(tooltips, "TipFriction", beyProj.stats.TipFriction.ToString("F3"), Color.Gray);
-    AddBeybladeStatTooltip(tooltips, "KnockbackPower", beyProj.stats.KnockbackPower.ToString("F1"), Color.Pink);
-    AddBeybladeStatTooltip(tooltips, "KnockbackResistance", beyProj.stats.KnockbackResistance.ToString("F1"), Color.Violet);
-    AddBeybladeStatTooltip(tooltips, "MoveSpeed", beyProj.stats.MoveSpeed.ToString("F1"), Color.Lime);
+    AddBeybladeStatTooltip(tooltips, "TipFriction", beyProj.stats.TipFriction.ToString("F2"), Color.Gray);
+    AddBeybladeStatTooltip(tooltips, "KnockbackPower", beyProj.stats.KnockbackPower.ToString("F2"), Color.Pink);
+    AddBeybladeStatTooltip(tooltips, "KnockbackResistance", beyProj.stats.KnockbackResistance.ToString("F2"), Color.Violet);
+    AddBeybladeStatTooltip(tooltips, "MoveSpeed", beyProj.stats.MoveSpeed.ToString("F2"), Color.Lime);
 }
 
 

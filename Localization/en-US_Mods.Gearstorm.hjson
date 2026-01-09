@@ -1,9 +1,10 @@
 // Tooltips globais para Beyblades
 Items: {
-	BeybladeStatsHeader: --- Beyblade Stats ---
+	// Seção de cabeçalhos e estatísticas
+	BeybladeStatsHeader: ──────⊱◈ Beyblade Attributes ◈⊰──────
 
 	BeybladeStats: {
-		Damage: Base Damage: {0}
+		Damage: Base Damage: {0} Spinner Damage
 		Mass: Mass: {0}
 		Density: Density: {0}
 		SpinSpeed: Spin Speed: {0}
@@ -17,13 +18,49 @@ Items: {
 		SpinDecay: Spin Decay: {0}
 	}
 
-	StarterBey: {
-		DisplayName: Lowest Grade Beyblade
-		Tooltip: So Rustic! At least good enough to hit the enemies, i guess.
+	// Seção de itens e tooltips
+	StarterBeyItem: {
+		DisplayName: Low Grade Beyblade
+		Tooltip: So Rustic!
 	}
+
+	BeybladeAugments.Header: ───────── Augment ─────────
 
 	AirTrek: {
 		DisplayName: Air Trek
+		Tooltip: ""
+	}
+
+	CrystalAugment: {
+		DisplayName: Crystal Augment
+		Tooltip: ""
+		TooltipDescription: Grants resistance to some debuffs and increases knockback resistance.
+	}
+
+	ExplosionAugment: {
+		DisplayName: Explosion Augment
+		Tooltip: ""
+		TooltipDescription: Explodes on hit, dealing extra damage and knockback.
+	}
+
+	FrostAugment: {
+		DisplayName: Frost Augment
+		Tooltip: ""
+		TooltipDescription: Slows enemies on hit and adds a frosty visual effect.
+	}
+
+	PoisonAugment: {
+		DisplayName: Poison Augment
+		Tooltip: ""
+	}
+
+	ChlorophyteAugment: {
+		DisplayName: Chlorophyte Augment
+		Tooltip: ""
+	}
+
+	FireAugment: {
+		DisplayName: Fire Augment
 		Tooltip: ""
 	}
 
@@ -42,45 +79,10 @@ Items: {
 		Tooltip: ""
 	}
 
-	StarterBeyItem: {
-		DisplayName: Starter Bey Item
+	CogwheelItem: {
+		DisplayName: Cogwheel Item
 		Tooltip: ""
 	}
-
-	ChlorophyteAugment: {
-		DisplayName: Chlorophyte Augment
-		Tooltip: ""
-	}
-
-	FireAugment: {
-		DisplayName: Fire Augment
-		Tooltip: ""
-	}
-
-	CrystalAugment: {
-		DisplayName: Crystal Augment
-		Tooltip: ""
-	}
-
-	ExplosionAugment: {
-		DisplayName: Explosion Augment
-		Tooltip: ""
-	}
-
-	FrostAugment: {
-		DisplayName: Frost Augment
-		Tooltip: ""
-	}
-
-	PoisonAugment: {
-		DisplayName: Poison Augment
-		Tooltip: ""
-	}
-}
-
-StarterBey: {
-	DisplayName: Lowest Grade Beyblade
-	Tooltip: So Rustic! At least good enough to hit the enemies, i guess.
 }
 
 DamageClasses: {
@@ -88,4 +90,4 @@ DamageClasses: {
 	AirTrekDamage.DisplayName: Air Trek Damage
 }
 
-Projectiles.StarterBeyProjectile.DisplayName: Starter Bey
+Projectiles.StarterBeyProjectile.DisplayName: Starter Bey Projectile

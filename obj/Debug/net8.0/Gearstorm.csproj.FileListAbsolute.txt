@@ -1,0 +1,13 @@
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\bin\Debug\net8.0\Gearstorm.deps.json
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\bin\Debug\net8.0\Gearstorm.dll
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\bin\Debug\net8.0\Gearstorm.pdb
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\Gearstorm.csproj.AssemblyReference.cache
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\Gearstorm.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\Gearstorm.AssemblyInfoInputs.cache
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\Gearstorm.AssemblyInfo.cs
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\Gearstorm.csproj.CoreCompileInputs.cache
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\Gearstorm.dll
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\refint\Gearstorm.dll
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\Gearstorm.pdb
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\ref\Gearstorm.dll
+C:\Users\wesle\OneDrive\Documentos\My Games\Terraria\tModLoader\ModSources\Gearstorm\obj\Debug\net8.0\Gearstorm.sourcelink.json

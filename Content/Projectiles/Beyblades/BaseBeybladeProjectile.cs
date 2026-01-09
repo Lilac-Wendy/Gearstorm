@@ -101,6 +101,7 @@ public abstract class BaseBeybladeProjectile : ModProjectile
 
             return false; 
         }
+    
         Main.EntitySpriteDraw(
             texture,
             drawPosition,
@@ -375,7 +376,7 @@ public override void AI()
 
     if (spinSpeed > 0.05f)
     {
-        if (++Projectile.frameCounter >= (int)(5 / spinSpeed))
+        if (++Projectile.frameCounter >= (int)(3 / spinSpeed * 2))
         {
             Projectile.frameCounter = 0;
             Projectile.frame = (Projectile.frame + 1) % Main.projFrames[Projectile.type];
@@ -482,34 +483,34 @@ public override void AI()
 
         return false;
     }
-#region CombatMechanics Part 2 (OnHit)
-    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
+#region CombatMechanics Part 2 (OnHit And Crit)
+public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
+{
+    if (hitCooldown > 0)
+        return;
+    Projectile.timeLeft = Math.Max(0, Projectile.timeLeft - 15);
+    float spinFactor = MathHelper.Clamp(spinSpeed, 0.5f, 2f);
+    float velocityBonus = Projectile.velocity.Length() * 0.8f * spinFactor;
+    int finalDamage = (int)(Projectile.damage * spinFactor) + (int)velocityBonus;
+    float critChance = (stats.SpinSpeed * 0.05f) + (stats.Balance * 0.1f);
+    if (Main.rand.NextFloat() < critChance)
+        hit.Crit = true;
+    hit.SourceDamage = finalDamage;
+    target.velocity.X += Math.Sign(Projectile.velocity.X) * 4f * spinFactor;
+    float densityFactor = 1f - MathHelper.Clamp(stats.Density * 0.3f, 0f, 0.7f);
+    Projectile.velocity.X *= densityFactor;
+    Terraria.Player player = Main.player[Projectile.owner];
+    for (int i = AmmoSlotStart; i <= AmmoSlotEnd; i++)
     {
-        if (hitCooldown > 0)
-            return;
-        float spinFactor = MathHelper.Clamp(spinSpeed, 0.5f, 2f);
-        float velocityBonus = Projectile.velocity.Length() * 0.8f * spinFactor;
-        int finalDamage = (int)(Projectile.damage * spinFactor) + (int)velocityBonus;
-        float critChance = (stats.SpinSpeed * 0.05f) + (stats.Balance * 0.1f);
-        if (Main.rand.NextFloat() < critChance)
-            hit.Crit = true;
-        hit.SourceDamage = finalDamage;
-        target.velocity.X += Math.Sign(Projectile.velocity.X) * 4f * spinFactor;
-        float densityFactor = 1f - MathHelper.Clamp(stats.Density * 0.3f, 0f, 0.7f);
-        Projectile.velocity.X *= densityFactor;
-        Terraria.Player player = Main.player[Projectile.owner];
-        for (int i = AmmoSlotStart; i <= AmmoSlotEnd; i++)  // Slots of Inventory of the Ammo, Top Priority First
+        Item item = player.inventory[i];
+        if (!item.IsAir && item.ModItem is BeybladeAugment beyAmmo)
         {
-            Item item = player.inventory[i];
-            if (!item.IsAir && item.ModItem is BeybladeAugment beyAmmo)
-            {
-                beyAmmo.ApplyAugmentEffect(this, target);
-                return; 
-            }
+            beyAmmo.ApplyAugmentEffect(this, target);
+            return; 
         }
-    
-        hitCooldown = 10;
     }
+    hitCooldown = 10;
+}
 #endregion
 }
 #region More AI, Don't Touch!

@@ -30,11 +30,13 @@ public class ExplosionAugment : BeybladeAugment
     
         // Spawna a bala explosiva no local do impacto.
         Projectile.NewProjectile(beybladeProj.Projectile.GetSource_FromThis(), target.Center, Vector2.Zero, ProjectileID.ExplosiveBullet, explosionDamage, 0, Main.player[beybladeProj.Projectile.owner].whoAmI);
-        if (!beybladeProj.bonusesApplied)
+        switch (beybladeProj.bonusesApplied)
         {
-            beybladeProj.Projectile.timeLeft = 60;
-            beybladeProj.Projectile.penetrate = 1;
-            beybladeProj.bonusesApplied = true;
+            case false:
+                beybladeProj.Projectile.timeLeft = 60;
+                beybladeProj.Projectile.penetrate = 1;
+                beybladeProj.bonusesApplied = true;
+                break;
         }
     }
 

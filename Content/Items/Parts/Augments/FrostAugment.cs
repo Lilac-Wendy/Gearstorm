@@ -11,10 +11,7 @@ namespace Gearstorm.Content.Items.Augments;
 public class FrostAugment : BeybladeAugment
 {
     public override string Texture => "Gearstorm/Assets/Items/Parts/Augment";
-
-    // Define a cor para o rastro do projétil
     public override Color AugmentColor => Color.LightBlue;
-
     public override void PostDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
     {
         Texture2D texture = ModContent.Request<Texture2D>(Texture).Value;

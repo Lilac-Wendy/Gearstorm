@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "2VH6nvt7qxU=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\wesle\\OneDrive\\Documentos\\My Games\\Terraria\\tModLoader\\ModSources\\Gearstorm\\Gearstorm.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\wesle\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.20\\microsoft.netcore.app.ref.8.0.20.nupkg.sha512",
+    "C:\\Users\\wesle\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.20\\microsoft.windowsdesktop.app.ref.8.0.20.nupkg.sha512",
+    "C:\\Users\\wesle\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.20\\microsoft.aspnetcore.app.ref.8.0.20.nupkg.sha512"
+  ],
+  "logs": []
+}
