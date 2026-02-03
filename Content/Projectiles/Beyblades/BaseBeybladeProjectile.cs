@@ -1,540 +1,687 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Gearstorm.Content.DamageClasses;
-using Gearstorm.Content.Data;
-using Gearstorm.Content.Items.Parts;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
 using Terraria.ModLoader;
-// Bazinga //
-namespace Gearstorm.Content.Projectiles.Beyblades;
-public abstract class BaseBeybladeProjectile : ModProjectile 
+using Gearstorm.Content.DamageClasses;
+using Gearstorm.Content.Data;
+using Gearstorm.Content.Items.Parts;
+using Gearstorm.Content.Items.Parts.Augments;
+
+namespace Gearstorm.Content.Projectiles.Beyblades
 {
-    #region Variables
-    public float currentSpinSpeed;
-    protected int hitCooldown = 0;
-    protected float spinSpeed = 1f;
-    protected bool onGround = false;
-    private const int AmmoSlotStart = 54;
-    private const int AmmoSlotEnd = 57;
-    public Color AugmentColor { get; set; } = Color.Transparent;
-    public bool bonusesApplied = false;
-    protected const float SpinFrameSpeed = 0.5f;
-    protected virtual bool CollideWithMinecartTracks => true;
-
-    protected int continuousHitCounter = 0;
-    protected const float BaseHitsPerSecond = 4f; 
-    protected List<NPC> recentlyHitNPCs = new List<NPC>();
-
-    public BeybladeStats stats;
-
-    public float DamageBase => stats.DamageBase;
-    public float Mass => stats.Mass;
-    public float Balance => stats.Balance;
-    public float SpinSpeedProp => stats.SpinSpeed; 
-    public float TipFriction => stats.TipFriction;
-#endregion
-
-#region CombatMechanics
-    public override void SetDefaults()
+    public abstract class BaseBeybladeProjectile : ModProjectile
     {
-        Projectile.width = (stats.Radius > 0) ? (int)(stats.Radius * 2 * 16) : 32;
-        Projectile.height = (stats.Height > 0) ? (int)(stats.Height * 32) : 32;
+        #region Variables
 
-        Projectile.friendly = true;
-        Projectile.hostile = false;
-        Projectile.penetrate = -1;
-        Projectile.timeLeft = 600;
-        Projectile.ignoreWater = true;
-        Projectile.tileCollide = true;
-        Projectile.DamageType = ModContent.GetInstance<Spinner>();
+        public float currentSpinSpeed;
+        protected float spinSpeed = 1f;
+        protected bool onGround = false;
+        protected int hitCooldown = 0;
 
-        Projectile.knockBack = (stats.KnockbackPower > 0) ? stats.KnockbackPower : 5f;
+        protected const int AmmoSlotStart = 54;
+        protected const int AmmoSlotEnd = 57;
 
-        if (stats.DamageBase > 0)
+        protected const float SpinFrameSpeed = 0.5f;
+        protected const float BaseHitsPerSecond = 4f;
+
+        protected int continuousHitCounter = 0;
+        protected List<NPC> recentlyHitNPCs = new();
+
+        public Color AugmentColor { get; set; } = Color.Transparent;
+        public bool bonusesApplied = false;
+
+        public BeybladeStats stats;
+
+        #endregion
+
+        #region Defaults
+
+        public override void SetStaticDefaults()
         {
-            float minimumDamage = stats.DamageBase * 1.0f;
-            float calculatedDamage = stats.DamageBase * (1f + stats.Mass * 0.1f) * stats.Balance;
-            Projectile.damage = (int)Math.Max(minimumDamage, calculatedDamage);
+            Main.projFrames[Projectile.type] = 2;
         }
 
-        Projectile.aiStyle = 0;
-        spinSpeed = (stats.SpinSpeed > 0) ? stats.SpinSpeed : 1f;
-        currentSpinSpeed = spinSpeed;
-    }
-    #endregion
-    
-   #region Rendering
-    public override void SetStaticDefaults()
-    {
-        Main.projFrames[Projectile.type] = 2;
-    }
-    public override bool PreDraw(ref Color lightColor)
-    {
-        Texture2D texture = ModContent.Request<Texture2D>(Projectile.ModProjectile.Texture).Value;
-        Rectangle sourceRect = texture.Frame(1, Main.projFrames[Projectile.type], 0, Projectile.frame);
-        Vector2 origin = sourceRect.Size() / 2f;
-        Vector2 drawPosition = Projectile.Center - Main.screenPosition;
-        drawPosition.Y += 4f; 
-
-        if (stats.Density < 0.7f)
+        public override void SetDefaults()
         {
-            float wobbleScale = (0.7f - stats.Density) * 0.3f;
-            float wobble = (float)Math.Sin(Main.GameUpdateCount * 0.2f) * wobbleScale;
+            // ================== HITBOX FÍSICA ==================
+            // Raio vem da Blade (em tiles)
+            int diameter = (stats.Radius > 0f)
+                ? (int)(stats.Radius * 2f * 16f)
+                : 32;
 
-            Vector2 wobbleScaleVec = new Vector2(1f + wobble, 1f - wobble);
-            Main.EntitySpriteDraw(
-                texture,
-                drawPosition,
-                sourceRect,
-                lightColor,
-                Projectile.rotation,
-                origin,
-                Projectile.scale * wobbleScaleVec, 
-                SpriteEffects.None,
-                0
+            Projectile.width = diameter;
+            Projectile.height = diameter;
+
+            // ================== FLAGS BÁSICAS ==================
+            Projectile.friendly = true;
+            Projectile.penetrate = -1;
+            Projectile.timeLeft = 600;
+            Projectile.tileCollide = true;
+            Projectile.ignoreWater = true;
+            Projectile.DamageType = ModContent.GetInstance<Spinner>();
+
+            // ================== OFFSET VISUAL ==================
+            // Height do Top influencia SOMENTE o visual
+            // Tops mais altos levantam o centro visual
+            MathHelper.Clamp(stats.Height, 0f, 1f);
+
+            // Valor negativo puxa o sprite para baixo
+            Projectile.gfxOffY = 0f;
+
+            // ================== COMBATE ==================
+            Projectile.knockBack = stats.KnockbackPower > 0f
+                ? stats.KnockbackPower
+                : 5f;
+
+            Projectile.damage = (int)(
+                stats.DamageBase *
+                (1f + stats.Mass * 0.1f) *
+                stats.Balance
             );
 
-            return false; 
-        }
-    
-        Main.EntitySpriteDraw(
-            texture,
-            drawPosition,
-            sourceRect,
-            lightColor,
-            Projectile.rotation,
-            origin,
-            Projectile.scale,
-            SpriteEffects.None,
-            0
-        );
-
-        return false;
-    }
-    #endregion
-    
-#region MinecartLogics
-    protected void CheckMinecartTrackCollision(ref bool onTrack)
-    {
-        Vector2[] detectionPoints = {
-            Projectile.Bottom,                         
-            Projectile.Bottom + new Vector2(-8, 0),    
-            Projectile.Bottom + new Vector2(8, 0)      
-        };
-
-        bool isOnTrack = false;
-        Vector2 trackPosition = Vector2.Zero;
-        Vector2 trackNormal = Vector2.Zero;
-        bool foundValidTrack = false;
-
-        foreach (Vector2 point in detectionPoints)
-        {
-            Point tilePos = point.ToTileCoordinates();
-            if (!WorldGen.InWorld(tilePos.X, tilePos.Y)) continue;
-
-            Tile tile = Main.tile[tilePos.X, tilePos.Y];
-            if (tile != null && tile.HasTile && tile.TileType == TileID.MinecartTrack)
-            {
-                isOnTrack = true;
-                trackPosition = new Vector2(tilePos.X * 16, tilePos.Y * 16);
-
-                switch (tile.Slope)
-                {
-                    case SlopeType.SlopeDownLeft:  
-                        trackNormal = new Vector2(-1, 1);
-                        foundValidTrack = true;
-                        break;
-                    case SlopeType.SlopeDownRight: 
-                        trackNormal = new Vector2(1, 1);
-                        foundValidTrack = true;
-                        break;
-                    case SlopeType.SlopeUpLeft:    
-                        trackNormal = new Vector2(-1, -1);
-                        foundValidTrack = true;
-                        break;
-                    case SlopeType.SlopeUpRight:   
-                        trackNormal = new Vector2(1, -1);
-                        foundValidTrack = true;
-                        break;
-                    case SlopeType.Solid:          
-                        trackNormal = Vector2.UnitY;
-                        foundValidTrack = true;
-                        break;
-                }
-
-                if (foundValidTrack) break;
-            }
+            // ================== SPIN ==================
+            spinSpeed = stats.SpinSpeed > 0f ? stats.SpinSpeed : 1f;
+            currentSpinSpeed = spinSpeed;
         }
 
-        if (isOnTrack && foundValidTrack)
-        {
-            onTrack = true;
-            SnapToTrack(trackPosition, trackNormal);
-            ApplyTrackPhysics(trackNormal);
-            PlayTrackEffects();
-        }
-        else
-        {
-            onTrack = false;
-        }
-    }
 
-    private void SnapToTrack(Vector2 trackPosition, Vector2 trackNormal)
-    {
-        float baseHeight = 2f;
-        float heightAdjust = 0f;
-
-        if (trackNormal.Y > 0) 
-        {
-            heightAdjust = Math.Abs(trackNormal.X) * 4f;
-        }
-        else if (trackNormal.Y < 0) 
-        {
-            heightAdjust = -Math.Abs(trackNormal.X) * 4f;
-        }
-
-        float targetY = trackPosition.Y - Projectile.height + baseHeight + heightAdjust;
-        float yDiff = targetY - Projectile.position.Y;
-        Projectile.position.Y += yDiff * 0.5f; 
-
-        if (Math.Abs(trackNormal.X) > 0.1f)
-        {
-            float xDiff = trackPosition.X + 8 - Projectile.Center.X;
-            Projectile.position.X += xDiff * 0.2f;
-        }
-    }
-
-    private void ApplyTrackPhysics(Vector2 trackNormal)
-    {
-        if (trackNormal != Vector2.Zero) 
-            trackNormal.Normalize();
-
-        float acceleration = 0.15f;
-        float maxSpeed = 15f;
-
-        if (Projectile.velocity.X > 0)
-        {
-            Projectile.velocity.X = Math.Min(Projectile.velocity.X + acceleration, maxSpeed);
-        }
-        else if (Projectile.velocity.X < 0)
-        {
-            Projectile.velocity.X = Math.Max(Projectile.velocity.X - acceleration, -maxSpeed);
-        }
-        else
-        {
-            Projectile.velocity.X = acceleration * Math.Sign(Main.player[Projectile.owner].Center.X - Projectile.Center.X);
-        }
-
-        if (Math.Abs(trackNormal.Y) > 0.1f)
-        {
-            Projectile.velocity.Y = -trackNormal.Y * Math.Abs(Projectile.velocity.X) * 0.4f;
-        }
-        else
-        {
-            Projectile.velocity.Y = 0;
-        }
-
-        stats.TipFriction *= 0.3f;
-    }
-
-    private void PlayTrackEffects()
-    {
-        if (Main.rand.NextBool(30))
-        {
-            var soundStyle = new SoundStyle("Terraria/Sounds/Item_55")
-            {
-                Volume = 0.3f,
-                Pitch = Main.rand.NextFloat(-0.2f, 0.2f),
-                PitchVariance = 0.15f
-            };
-            SoundEngine.PlaySound(soundStyle, Projectile.position);
-        }
-
-        if (Main.rand.NextBool(5))
-        {
-            int dustType = DustID.Smoke;
-            Vector2 dustVelocity = new Vector2(-Math.Sign(Projectile.velocity.X) * 0.8f, -0.5f);
-            Dust.NewDustPerfect(Projectile.Bottom, dustType, dustVelocity, 100, default, 0.7f);
-        }
-    }
-#endregion
-
-    private void ApplyContinuousDamage()
-    {
-
-        float hitsPerSecond = BaseHitsPerSecond * spinSpeed;
-        int hitInterval = (int)(60 / hitsPerSecond);
-
-        continuousHitCounter++;
-        if (continuousHitCounter < hitInterval) return;
-        continuousHitCounter = 0;
-
-        recentlyHitNPCs.RemoveAll(npc => !npc.active || !npc.GetGlobalNPC<BeybladeNPC>().IsInContact(Projectile));
-
-        float damageRadius = Projectile.width / 2f;
-        foreach (NPC npc in Main.npc)
-        {
-            if (!npc.active || npc.friendly || npc.life <= 0) continue;
-
-            float distance = Vector2.Distance(Projectile.Center, npc.Center);
-            if (distance > damageRadius) continue;
-
-            if (recentlyHitNPCs.Contains(npc)) continue;
-
-            Vector2 knockbackDir = npc.Center - Projectile.Center;
-            if (knockbackDir != Vector2.Zero) knockbackDir.Normalize();
-
-            float damageMultiplier = 0.3f + (spinSpeed * 0.1f);
-            int continuousDamage = (int)(Projectile.damage * damageMultiplier);
-
-            NPC.HitInfo hitInfo = new NPC.HitInfo()
-            {
-                Damage = continuousDamage,
-                Knockback = stats.KnockbackPower * 0.5f * spinSpeed,
-                HitDirection = knockbackDir.X > 0 ? 1 : -1
-            };
-
-            npc.StrikeNPC(hitInfo);
-
-            for (int i = 0; i < 3; i++)
-            {
-                Dust.NewDust(npc.position, npc.width, npc.height, 
-                    DustID.Blood, Main.rand.NextFloat(-2f, 2f), Main.rand.NextFloat(-2f, 2f));
-            }
-
-            recentlyHitNPCs.Add(npc);
-            npc.GetGlobalNPC<BeybladeNPC>().SetContact(Projectile);
-        }
-    }
-
-public override void AI()
+        #endregion
+private Color MixAugmentColors(List<Color> colors)
 {
-    #region Trail Effects!
-    if (Projectile.localAI[0] == 0)
+    if (colors == null || colors.Count == 0)
+        return Color.Transparent;
+
+    if (colors.Count == 1)
+        return colors[0];
+
+    float sumX = 0f, sumY = 0f, sumS = 0f, sumV = 0f;
+    int validCount = 0;
+
+    // --- PARTE 1: RGB -> HSV E SOMA CIRCULAR ---
+    foreach (Color c in colors)
     {
-        Terraria.Player player = Main.player[Projectile.owner];
-        for (int i = 54; i <= 57; i++)
+        if (c.A == 0) continue;
+
+        // Conversão RGB para HSV embutida
+        float r = c.R / 255f;
+        float g = c.G / 255f;
+        float b = c.B / 255f;
+
+        float min = Math.Min(r, Math.Min(g, b));
+        float max = Math.Max(r, Math.Max(g, b));
+        float delta = max - min;
+
+        float h = 0;
+        if (delta > 0)
         {
-            Item item = player.inventory[i];
-            if (!item.IsAir && item.ModItem is BeybladeAugment beyAmmo)
+            if (max == r) h = (g - b) / delta + (g < b ? 6 : 0);
+            else if (max == g) h = (b - r) / delta + 2;
+            else h = (r - g) / delta + 4;
+            h /= 6;
+        }
+
+        float s = (max == 0) ? 0 : (delta / max);
+        float v = max;
+
+        // Lógica circular para evitar cores "mortas" no meio
+        float hueRad = h * MathHelper.TwoPi;
+        sumX += (float)Math.Cos(hueRad);
+        sumY += (float)Math.Sin(hueRad);
+
+        sumS += s;
+        sumV += v;
+        validCount++;
+    }
+
+    if (validCount == 0) return Color.Transparent;
+
+    // --- PARTE 2: MÉDIAS E CLAMPS ---
+    float avgHue = (float)Math.Atan2(sumY, sumX) / MathHelper.TwoPi;
+    if (avgHue < 0f) avgHue += 1f;
+
+    float avgSat = MathHelper.Clamp(sumS / validCount, 0.55f, 0.9f);
+    float avgVal = MathHelper.Clamp(sumV / validCount, 0.6f, 0.9f);
+
+    // --- PARTE 3: HSV -> RGB E RETORNO ---
+    int i = (int)Math.Floor(avgHue * 6);
+    float f = avgHue * 6 - i;
+    float p = avgVal * (1 - avgSat);
+    float q = avgVal * (1 - f * avgSat);
+    float t = avgVal * (1 - (1 - f) * avgSat);
+
+    float fr, fg, fb;
+    switch (i % 6)
+    {
+        case 0: fr = avgVal; fg = t; fb = p; break;
+        case 1: fr = q; fg = avgVal; fb = p; break;
+        case 2: fr = p; fg = avgVal; fb = t; break;
+        case 3: fr = p; fg = q; fb = avgVal; break;
+        case 4: fr = t; fg = p; fb = avgVal; break;
+        case 5: fr = avgVal; fg = p; fb = q; break;
+        default: fr = fg = fb = 0; break;
+    }
+
+    return new Color((byte)(fr * 255), (byte)(fg * 255), (byte)(fb * 255));
+}
+
+
+        #region AI
+
+        public override void AI()
+        {
+            HandleBeybladeVsBeyblade();
+
+            /* ================== AUGMENT VISUAL (MIXED) ================== */
+
+            if (Projectile.localAI[0] == 0)
             {
-                AugmentColor = beyAmmo.AugmentColor;
-                break; 
-            }
-        }
-        Projectile.localAI[0] = 1; 
-    }
-    
-    if (AugmentColor != Color.Transparent)
-    {
-        if (Main.rand.NextBool(1))
-        {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.TintableDustLighted,
-                Projectile.velocity * -0.2f, 120, AugmentColor, 2.4f);
-            dust.noGravity = true;
-        }
-    }
-    #endregion
+                Player player = Main.player[Projectile.owner];
 
-#region AI Don't Touch This
-    Projectile.velocity.Y += 0.3f;
-    float velX = Projectile.velocity.X;
-    float tiltAmount = MathHelper.Clamp(velX * 0.05f, -0.3f, 0.3f);
-    Projectile.rotation = tiltAmount;
+                List<Color> augmentColors = new();
 
-    onGround = Collision.SolidCollision(Projectile.position + new Vector2(0, 1), Projectile.width,
-        Projectile.height);
-
-    bool onTrack = false;
-    CheckMinecartTrackCollision(ref onTrack);
-
-    float inertiaEffect = MathHelper.Clamp(stats.MomentOfInertia * 0.01f, 0.5f, 2f);
-    if (onGround && currentSpinSpeed > 0)
-    {
-        float spinDecay = 0.02f / inertiaEffect;
-        currentSpinSpeed = Math.Max(currentSpinSpeed - spinDecay, 0);
-    }
-
-    if (Math.Abs(Projectile.velocity.Y) > 2f && stats.Density < 0.7f)
-    {
-        float bounceFactor = 1.5f - stats.Density;
-        Projectile.velocity.Y *= -0.3f * bounceFactor;
-    }
-
-    if (currentSpinSpeed < 0.5f && stats.Density < 0.8f)
-    {
-        float wobbleIntensity = (0.8f - stats.Density) * 0.1f;
-        Projectile.rotation += (float)Math.Sin(Main.GameUpdateCount * 0.1f) * wobbleIntensity;
-    }
-
-    spinSpeed = MathHelper.Clamp(currentSpinSpeed, 0.1f, 3f);
-
-    if (spinSpeed > 0.05f)
-    {
-        if (++Projectile.frameCounter >= (int)(3 / spinSpeed * 2))
-        {
-            Projectile.frameCounter = 0;
-            Projectile.frame = (Projectile.frame + 1) % Main.projFrames[Projectile.type];
-        }
-    }
-    else
-    {
-        Projectile.frame = 0;
-    }
-
-    if (onGround)
-    {
-        float friction = (stats.TipFriction > 0) ? stats.TipFriction : 0.04f;
-        Projectile.velocity.X *= (1f - friction);
-        if (Math.Abs(Projectile.velocity.X) < 0.1f)
-            Projectile.velocity.X = 0f;
-    }
-
-    if (hitCooldown > 0)
-        hitCooldown--;
-
-    if (spinSpeed > 0.5f)
-    {
-        ApplyContinuousDamage();
-    }
-
-    if (hitCooldown == 9)
-    {
-        if (stats.Density < 0.6f)
-        {
-            for (int i = 0; i < 5; i++)
-            {
-                Vector2 sparkVel = new Vector2(Main.rand.NextFloat(-2f, 2f), Main.rand.NextFloat(-3f, -1f));
-                Dust.NewDustPerfect(Projectile.Center, DustID.YellowTorch, sparkVel, 100, default, 1.2f);
-            }
-        }
-        else if (stats.Density > 0.9f)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                Vector2 impactVel = new Vector2(Main.rand.NextFloat(-1f, 1f), 0);
-                Dust.NewDustPerfect(Projectile.Bottom, DustID.Iron, impactVel, 150, default, 0.8f);
-            }
-        }
-    }
-
-    for (int i = 0; i < Main.maxProjectiles; i++)
-    {
-        Projectile other = Main.projectile[i];
-        if (other.active && other.type == Projectile.type && other.whoAmI != Projectile.whoAmI)
-        {
-            if (Projectile.Hitbox.Intersects(other.Hitbox))
-            {
-                Vector2 tempVel = Projectile.velocity;
-                Projectile.velocity = other.velocity;
-                other.velocity = tempVel;
-
-                Projectile.timeLeft -= 10;
-                other.timeLeft -= 10;
-
-                Vector2 pushDir = Projectile.Center - other.Center;
-                if (pushDir != Vector2.Zero)
+                for (int i = AmmoSlotStart; i <= AmmoSlotEnd; i++)
                 {
-                    pushDir.Normalize();
-
-                    BaseBeybladeProjectile otherBeyblade = other.ModProjectile as BaseBeybladeProjectile;
-                    if (otherBeyblade != null)
+                    Item item = player.inventory[i];
+                    if (!item.IsAir && item.ModItem is BeybladeAugment aug)
                     {
-                        BeybladeStats otherStats = otherBeyblade.stats;
-
-                        float ourDensityFactor = MathHelper.Clamp(stats.Density * 0.5f, 0.5f, 1.5f);
-                        float theirDensityFactor = MathHelper.Clamp(otherStats.Density * 0.5f, 0.5f, 1.5f);
-
-                        float knockbackPower = (stats.KnockbackPower > 0)
-                            ? stats.KnockbackPower * ourDensityFactor
-                            : 2f;
-                        float otherKnockbackPower = (otherStats.KnockbackPower > 0)
-                            ? otherStats.KnockbackPower * theirDensityFactor
-                            : 2f;
-                        Projectile.velocity += pushDir * knockbackPower;
-                        other.velocity -= pushDir * otherKnockbackPower;
+                        if (aug.AugmentColor != Color.Transparent)
+                            augmentColors.Add(aug.AugmentColor);
                     }
                 }
 
-                for (int d = 0; d < 8; d++)
+                AugmentColor = MixAugmentColors(augmentColors);
+                Projectile.localAI[0] = 1;
+            }
+
+
+            if (AugmentColor != Color.Transparent && Main.rand.NextBool())
+            {
+                Vector2 trailPos = Projectile.Bottom + new Vector2(0, -2f);
+
+                Dust d = Dust.NewDustPerfect(
+                    trailPos, 
+                    DustID.TintableDustLighted,
+                    Projectile.velocity * -0.2f, // Faz o rastro ir para trás
+                    120,
+                    AugmentColor,
+                    2.4f
+                );
+                d.noGravity = true;
+            }
+
+
+
+            /* ================== TRACK + GRAVITY ================== */
+
+            bool onTrack = false;
+            CheckMinecartTrackCollision(ref onTrack);
+
+            switch (onTrack)
+            {
+                case false:
+                    Projectile.velocity.Y += 0.35f; // gravidade correta
+                    break;
+                case true:
+                    Projectile.velocity.Y = Math.Min(Projectile.velocity.Y, 0.1f);
+                    break;
+            }
+
+            /* ================== GROUND CHECK ================== */
+            float groundProbe = 1f;
+
+            onGround =
+                Projectile.velocity.Y >= 0f &&
+                Collision.SolidCollision(
+                    Projectile.BottomLeft + new Vector2(0, groundProbe),
+                    Projectile.width,
+                    2
+                );
+
+            if (onGround)
+            {
+                // snap único, sem interpolação
+                Projectile.velocity.Y = 0f;
+            }
+
+
+            /* ================== SPIN DECAY ================== */
+
+            float inertia = MathHelper.Clamp(stats.MomentOfInertia * 0.01f, 0.5f, 2f);
+            if (onGround && currentSpinSpeed > 0f)
+            {
+                currentSpinSpeed = Math.Max(currentSpinSpeed - (0.02f / inertia), 0f);
+            }
+
+            spinSpeed = MathHelper.Clamp(currentSpinSpeed, 0.1f, 3f);
+
+            /* ================== BOUNCE (FIXED) ================== */
+
+            if (onGround && stats.Density < 0.7f && Projectile.velocity.Y > 1f)
+            {
+                Projectile.velocity.Y *= -0.2f;
+            }
+
+            /* ================== FRICTION ================== */
+
+            if (onGround)
+            {
+                float friction = stats.TipFriction > 0 ? stats.TipFriction : 0.04f;
+                Projectile.velocity.X *= (1f - friction);
+
+                if (Math.Abs(Projectile.velocity.X) < 0.1f)
+                    Projectile.velocity.X = 0f;
+                if (Math.Abs(Projectile.velocity.X) > 1f && spinSpeed > 0.4f && Main.rand.NextBool(4))
                 {
-                    Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.Torch,
-                        Main.rand.NextFloat(-2f, 2f), Main.rand.NextFloat(-2f, 2f), 150, default, 1.2f);
+                    Dust d = Dust.NewDustPerfect(
+                        Projectile.Bottom + new Vector2(Main.rand.NextFloat(-8f, 8f), -2f),
+                        DustID.Torch,
+                        new Vector2(
+                            -Projectile.velocity.X * 0.3f,
+                            -1f
+                        ),
+                        120,
+                        AugmentColor == Color.Transparent ? Color.Orange : AugmentColor,
+                        0.9f
+                    );
+                    d.noGravity = true;
+                }
+                if (Main.rand.NextBool(30))
+                {
+                    SoundEngine.PlaySound(
+                        SoundID.Item10 with { Volume = 0.2f, PitchVariance = 0.1f },
+                        Projectile.Center
+                    );
                 }
 
-                Terraria.Audio.SoundEngine.PlaySound(SoundID.NPCHit4, Projectile.position);
+            }
+
+            /* ================== ROTATION ================== */
+
+            Projectile.rotation = MathHelper.Clamp(Projectile.velocity.X * 0.05f, -0.3f, 0.3f);
+
+            if (++Projectile.frameCounter >= (int)(5 / spinSpeed))
+            {
+                Projectile.frameCounter = 0;
+                Projectile.frame = (Projectile.frame + 1) % Main.projFrames[Projectile.type];
+            }
+
+            /* ================== DAMAGE ================== */
+
+            if (spinSpeed > 0.5f)
+                ApplyContinuousDamage();
+
+            if (hitCooldown > 0)
+                hitCooldown--;
+        }
+private void HandleBeybladeVsBeyblade()
+{
+    for (int i = 0; i < Main.maxProjectiles; i++)
+    {
+        Projectile other = Main.projectile[i];
+
+        if (!other.active || other.whoAmI == Projectile.whoAmI || other.type != Projectile.type)
+            continue;
+
+        if (other.ModProjectile is not BaseBeybladeProjectile otherBey)
+            continue;
+
+        // ==== DETECÇÃO DE COLISÃO ====
+        // Convertendo raio para pixels (escala 1:16 padrão Terraria)
+        float radiusA = stats.Radius * 16f;
+        float radiusB = otherBey.stats.Radius * 16f;
+        Vector2 delta = Projectile.Center - other.Center;
+        float distance = delta.Length();
+        float minDist = radiusA + radiusB;
+
+        if (distance > minDist)
+            continue;
+
+        // Prevenção de divisão por zero e sobreposição absoluta
+        Vector2 normal = distance > 0f ? delta / distance : Vector2.UnitX;
+
+        // ==== FÍSICA DE IMPACTO (COLISÃO ELÁSTICA) ====
+        Vector2 relVel = Projectile.velocity - other.velocity;
+        float velAlongNormal = Vector2.Dot(relVel, normal);
+
+        // Se já estão se afastando, ignorar
+        if (velAlongNormal > 0f)
+            continue;
+
+        // Coeficiente de Restituição baseado na densidade média
+        // Quanto mais denso, mais o impacto é absorvido (menos "quique" seco)
+        float avgDensity = (stats.Density + otherBey.stats.Density) * 0.5f;
+        float e = MathHelper.Clamp(1.0f - avgDensity, 0.1f, 0.9f);
+
+        // Massa e Inércia
+        float mA = stats.Mass;
+        float mB = otherBey.stats.Mass;
+
+        // Cálculo do Impulso Escalar (Fórmula de Colisão com Restituição)
+        // j = -(1 + e) * v_rel / (1/mA + 1/mB)
+        float j = -(1f + e) * velAlongNormal;
+        j /= (1f / mA) + (1f / mB);
+
+        // Modificador de Knockback (Potência de Ataque vs Resistência de Defesa)
+        // Usamos a diferença de potências para escalar o impulso
+        float attackBonus = (stats.KnockbackPower + otherBey.stats.KnockbackPower) * 0.5f;
+        float impulseMag = j * attackBonus;
+
+        Vector2 impulseVec = impulseMag * normal;
+
+        // ==== APLICAÇÃO DE VELOCIDADE ====
+        // A resistência reduz a aceleração final de forma inversamente proporcional (a = F / m * resist)
+        float resA = 1f / (1f + stats.KnockbackResistance);
+        float resB = 1f / (1f + otherBey.stats.KnockbackResistance);
+
+        Projectile.velocity += (impulseVec / mA) * resA;
+        other.velocity -= (impulseVec / mB) * resB;
+
+        // ==== RESOLUÇÃO DE PENETRAÇÃO (ANTI-STUCK) ====
+        // Empurra levemente para fora para evitar que fiquem presos um dentro do outro
+        float overlap = minDist - distance;
+        Vector2 separation = normal * (overlap / (mA + mB));
+        Projectile.position += separation * mB;
+        other.position -= separation * mA;
+
+        // ==== EFEITOS E CALLBACKS ====
+        // Passamos o impulso escalar para o tratamento de efeitos
+        HandleImpact(normal, impulseMag, other, null);
+        otherBey.HandleImpact(-normal, impulseMag, Projectile, null);
+    }
+}
+
+
+
+private void HandleImpact(
+    Vector2 normal,
+    float impactStrength,
+    Projectile otherProj = null,
+    NPC targetNPC = null
+)
+{
+    if (normal == Vector2.Zero) normal = -Vector2.UnitY;
+
+    // Normalização da força de impacto baseada na inércia do objeto
+    // Impactos mais fortes em objetos com pouca inércia causam mais perda de spin
+    float effectiveImpact = impactStrength / (1f + stats.Density);
+    
+    // ==== PERDA DE SPIN (ENERGIA CINÉTICA) ====
+    // O SpinDecay atua como um multiplicador de eficiência
+    float spinLoss = (effectiveImpact / stats.MomentOfInertia) * stats.SpinDecay;
+    currentSpinSpeed = Math.Max(currentSpinSpeed - spinLoss, 0f);
+
+    // ==== DESGASTE DE TEMPO DE VIDA (TIMELEFT) ====
+    // Representa a perda de estabilidade/estamina da Beyblade
+    int stabilityLoss = (int)(effectiveImpact * 2f);
+    Projectile.timeLeft = Math.Max(Projectile.timeLeft - stabilityLoss, 0);
+
+    // ==== FEEDBACK VISUAL E SONORO ====
+    float visualIntensity = (float)Math.Sqrt(effectiveImpact);
+    if (visualIntensity > 0.5f)
+    {
+        float intensity = MathHelper.Clamp(visualIntensity, 0f, 1f);
+        float burst = MathF.Pow(intensity, 1.5f); // impacto mais agressivo no pico
+
+        int dustCount = (int)MathHelper.Lerp(6, 18, burst);
+
+        for (int i = 0; i < dustCount; i++)
+        {
+            float spread = MathHelper.Lerp(0.2f, 0.6f, burst);
+            float speed = MathHelper.Lerp(2.5f, 6f, Main.rand.NextFloat()) * burst;
+
+            Vector2 velocity =
+                normal.RotatedByRandom(spread) * speed;
+
+            Dust d = Dust.NewDustPerfect(
+                Projectile.Center,
+                DustID.FireworksRGB,
+                velocity,
+                120,
+                AugmentColor == Color.Transparent ? Color.OrangeRed : AugmentColor,
+                MathHelper.Lerp(0.5f, 0.85f, MathF.Sqrt(burst))
+            
+
+            );
+
+            d.noGravity = true;
+            d.velocity *= Main.rand.NextFloat(0.85f, 1.1f);
+        }
+        Dust core = Dust.NewDustPerfect(
+            Projectile.Center,
+            DustID.Torch,
+            Vector2.Zero,
+            0,
+            AugmentColor == Color.Transparent ? Color.Yellow : AugmentColor,
+            1.0f + burst
+        );
+        core.noGravity = true;
+    
+
+        
+        SoundEngine.PlaySound(
+            SoundID.Item37 with { 
+                Volume = MathHelper.Clamp(visualIntensity * 0.3f, 0.2f, 0.8f), 
+                PitchVariance = 0.3f,
+                Pitch = MathHelper.Clamp(visualIntensity * 0.1f, -0.5f, 0.5f)
+            },
+            Projectile.Center
+        );
+    }
+
+    // Se for um NPC, aplicamos o knockback residual aqui, pois NPCs não usam a física de Beyblade
+    if (targetNPC != null)
+    {
+        float npcResist = 1f - targetNPC.knockBackResist;
+        targetNPC.velocity += normal * (impactStrength / stats.Mass) * stats.KnockbackPower * npcResist;
+    }
+
+    ApplyAugmentOnHit(normal, effectiveImpact, otherProj, targetNPC);
+}
+
+
+
+private void ApplyAugmentOnHit(Vector2 normal, float impactStrength, Projectile otherProj, NPC targetNPC)
+        {
+            Player player = Main.player[Projectile.owner];
+
+            for (int i = AmmoSlotStart; i <= AmmoSlotEnd; i++)
+            {
+                Item item = player.inventory[i];
+                if (item.ModItem is not BeybladeAugment aug)
+                    continue;
+
+                aug.OnBeybladeHit(
+                    Projectile,
+                    normal,
+                    impactStrength,
+                    otherProj,
+                    targetNPC
+                );
             }
         }
-    }
-    #endregion
-}
 
-    public override bool OnTileCollide(Vector2 oldVelocity)
-    {
-        if (Projectile.velocity.X != oldVelocity.X)
-            Projectile.velocity.X = -oldVelocity.X * 0.8f;
-        if (Projectile.velocity.Y != oldVelocity.Y)
-            Projectile.velocity.Y = -oldVelocity.Y * 0.5f;
 
-        return false;
-    }
-#region CombatMechanics Part 2 (OnHit And Crit)
 public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
-{
-    if (hitCooldown > 0)
-        return;
-    Projectile.timeLeft = Math.Max(0, Projectile.timeLeft - 15);
-    float spinFactor = MathHelper.Clamp(spinSpeed, 0.5f, 2f);
-    float velocityBonus = Projectile.velocity.Length() * 0.8f * spinFactor;
-    int finalDamage = (int)(Projectile.damage * spinFactor) + (int)velocityBonus;
-    float critChance = (stats.SpinSpeed * 0.05f) + (stats.Balance * 0.1f);
-    if (Main.rand.NextFloat() < critChance)
-        hit.Crit = true;
-    hit.SourceDamage = finalDamage;
-    target.velocity.X += Math.Sign(Projectile.velocity.X) * 4f * spinFactor;
-    float densityFactor = 1f - MathHelper.Clamp(stats.Density * 0.3f, 0f, 0.7f);
-    Projectile.velocity.X *= densityFactor;
-    Terraria.Player player = Main.player[Projectile.owner];
-    for (int i = AmmoSlotStart; i <= AmmoSlotEnd; i++)
-    {
-        Item item = player.inventory[i];
-        if (!item.IsAir && item.ModItem is BeybladeAugment beyAmmo)
         {
-            beyAmmo.ApplyAugmentEffect(this, target);
-            return; 
+            Vector2 normal = target.Center - Projectile.Center;
+            if (normal == Vector2.Zero)
+                normal = Vector2.UnitX;
+
+            normal.Normalize();
+
+            float impactStrength = Projectile.velocity.Length()
+                                   * MathF.Sqrt(MathHelper.Clamp(stats.Mass, 0.5f, 5f))
+                                   * currentSpinSpeed
+                                   / (target.knockBackResist + 1f);
+
+            impactStrength = MathHelper.Clamp(impactStrength, 0f, 8f);
+
+            HandleImpact(normal, impactStrength, null, target);
+        }
+
+
+        #endregion
+        private void SnapToTrack(Vector2 trackPosition, Vector2 trackNormal)
+        {
+            float baseHeight = 2f;
+
+            float targetY = trackPosition.Y - Projectile.height + baseHeight;
+            float diff = targetY - Projectile.position.Y;
+
+            Projectile.position.Y += MathHelper.Clamp(diff, -2f, 2f);
+
+
+            if (Math.Abs(trackNormal.X) > 0.1f)
+            {
+                float xDiff = (trackPosition.X + 8f) - Projectile.Center.X;
+                Projectile.position.X += xDiff * 0.3f;
+            }
+        }
+
+        #region Minecart Logic (RESTORED + FIXED)
+
+        protected void CheckMinecartTrackCollision(ref bool onTrack)
+        {
+            Vector2 checkPos = Projectile.Bottom + new Vector2(0, 2);
+            Point tilePos = checkPos.ToTileCoordinates();
+
+            if (!WorldGen.InWorld(tilePos.X, tilePos.Y))
+                return;
+
+            Tile tile = Main.tile[tilePos.X, tilePos.Y];
+            if (tile == null || !tile.HasTile || tile.TileType != TileID.MinecartTrack)
+                return;
+
+            onTrack = true;
+
+            Vector2 trackPos = new(tilePos.X * 16, tilePos.Y * 16);
+
+            Vector2 normal = tile.Slope switch
+            {
+                SlopeType.SlopeDownLeft => new Vector2(-1, 1),
+                SlopeType.SlopeDownRight => new Vector2(1, 1),
+                SlopeType.SlopeUpLeft => new Vector2(-1, -1),
+                SlopeType.SlopeUpRight => new Vector2(1, -1),
+                _ => Vector2.UnitY
+            };
+
+            SnapToTrack(trackPos, normal);
+            ApplyTrackPhysics(normal);
+        }
+
+
+        protected void ApplyTrackPhysics(Vector2 trackNormal)
+        {
+            if (trackNormal != Vector2.Zero)
+                trackNormal.Normalize();
+
+            Projectile.velocity.X += trackNormal.X * 0.15f;
+
+            if (Math.Abs(trackNormal.Y) < 0.1f)
+            {
+                Projectile.velocity.Y = Math.Min(Projectile.velocity.Y, 0.2f);
+            }
+            else
+            {
+                Projectile.velocity.Y += trackNormal.Y * 0.15f;
+            }
+
+            stats.TipFriction *= 0.3f;
+        }
+
+        #endregion
+
+        #region Tile Collision
+
+        public override bool OnTileCollide(Vector2 oldVelocity)
+        {
+            if (Projectile.velocity.X != oldVelocity.X)
+                Projectile.velocity.X = -oldVelocity.X * 0.8f;
+
+            if (Projectile.velocity.Y != oldVelocity.Y)
+                Projectile.velocity.Y = -oldVelocity.Y * 0.5f;
+
+            return false;
+        }
+
+        #endregion
+
+        #region Combat
+
+        private void ApplyContinuousDamage()
+        {
+            float hitsPerSecond = BaseHitsPerSecond * spinSpeed;
+            int hitInterval = (int)(60f / hitsPerSecond);
+
+            if (++continuousHitCounter < hitInterval)
+                return;
+
+            continuousHitCounter = 0;
+
+            float radius = Projectile.width / 2f;
+
+            foreach (NPC npc in Main.npc)
+            {
+                if (!npc.active || npc.friendly) continue;
+                if (Vector2.Distance(Projectile.Center, npc.Center) > radius) continue;
+
+                npc.StrikeNPC(new NPC.HitInfo
+                {
+                    Damage = (int)(Projectile.damage * (0.3f + spinSpeed * 0.1f)),
+                    Knockback = stats.KnockbackPower * 0.5f,
+                    HitDirection = Math.Sign(npc.Center.X - Projectile.Center.X)
+                });
+                
+                for (int i = 0; i < 5; i++)
+                {
+                    Dust d = Dust.NewDustPerfect(
+                        npc.Center,
+                        DustID.Blood,
+                        Vector2.Normalize(npc.Center - Projectile.Center) * 2f,
+                        100,
+                        AugmentColor == Color.Transparent ? Color.Red : AugmentColor,
+                        1f
+                    );
+                    d.noGravity = true;
+                }
+                
+                SoundEngine.PlaySound(
+                    SoundID.NPCHit4 with { Volume = 0.5f, PitchVariance = 0.2f },
+                    npc.Center
+                );
+            }
+        }
+
+        #endregion
+    }
+
+    #region Global NPC
+
+    public class BeybladeNPC : GlobalNPC
+    {
+        private Projectile lastContact;
+        private int timer;
+
+        public override bool InstancePerEntity => true;
+
+        public bool IsInContact(Projectile proj)
+            => lastContact == proj && timer > 0;
+
+        public void SetContact(Projectile proj)
+        {
+            lastContact = proj;
+            timer = 10;
+        }
+
+        public override void PostAI(NPC npc)
+        {
+            if (timer > 0) timer--;
         }
     }
-    hitCooldown = 10;
+
+    #endregion
 }
-#endregion
-}
-#region More AI, Don't Touch!
-public class BeybladeNPC : GlobalNPC
-{
-    private Projectile lastContactProjectile;
-    private int contactTimer;
-
-    public override bool InstancePerEntity => true;
-
-    public bool IsInContact(Projectile projectile)
-    {
-        return lastContactProjectile == projectile && contactTimer > 0;
-    }
-
-    public void SetContact(Projectile projectile)
-    {
-        lastContactProjectile = projectile;
-        contactTimer = 10; 
-    }
-
-    public override void PostAI(NPC npc)
-    {
-        if (contactTimer > 0) contactTimer--;
-    }
-}
-#endregion

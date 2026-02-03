@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Gearstorm")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ee8f886a72bda832301f0f514aef94a1c025b0ba")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2d581ee88a59590ba17442bc58b6b9a4c6d8c6da")]
 [assembly: System.Reflection.AssemblyProductAttribute("Gearstorm")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Gearstorm")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

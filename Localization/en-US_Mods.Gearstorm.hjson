@@ -26,42 +26,22 @@ Items: {
 
 	BeybladeAugments.Header: ───────── Augment ─────────
 
-	AirTrek: {
-		DisplayName: Air Trek
+	FireAugment: {
+		DisplayName: Fire Augment
 		Tooltip: ""
-	}
-
-	CrystalAugment: {
-		DisplayName: Crystal Augment
-		Tooltip: ""
-		TooltipDescription: Grants resistance to some debuffs and increases knockback resistance.
-	}
-
-	ExplosionAugment: {
-		DisplayName: Explosion Augment
-		Tooltip: ""
-		TooltipDescription: Explodes on hit, dealing extra damage and knockback.
+		TooltipDescription: Ignites enemies on impact with searing flames.
 	}
 
 	FrostAugment: {
 		DisplayName: Frost Augment
 		Tooltip: ""
-		TooltipDescription: Slows enemies on hit and adds a frosty visual effect.
+		TooltipDescription: Inflicts frostburn and chills enemies to the bone.
 	}
 
 	PoisonAugment: {
 		DisplayName: Poison Augment
 		Tooltip: ""
-	}
-
-	ChlorophyteAugment: {
-		DisplayName: Chlorophyte Augment
-		Tooltip: ""
-	}
-
-	FireAugment: {
-		DisplayName: Fire Augment
-		Tooltip: ""
+		TooltipDescription: Coats the blade in toxins, poisoning foes on hit.
 	}
 
 	BasicBaseItem: {
@@ -83,6 +63,46 @@ Items: {
 		DisplayName: Cogwheel Item
 		Tooltip: ""
 	}
+
+	BeybladeLauncherItem: {
+		DisplayName: Beyblade Launcher Item
+		Tooltip: ""
+	}
+
+	GoldBladeItem: {
+		Tooltip: ""
+		DisplayName: Gold Blade Item
+	}
+
+	AeroGlideAugment: {
+		DisplayName: Aero Glide Augment
+		Tooltip: ""
+	}
+
+	ChlorophyteAugment: {
+		DisplayName: Chlorophyte Augment
+		Tooltip: ""
+	}
+
+	CrystalAugment: {
+		DisplayName: Crystal Augment
+		Tooltip: ""
+	}
+
+	InfernoAugment: {
+		DisplayName: Inferno Augment
+		Tooltip: ""
+	}
+
+	NaniteAugment: {
+		DisplayName: Nanite Augment
+		Tooltip: ""
+	}
+
+	VenomAugment: {
+		DisplayName: Venom Augment
+		Tooltip: ""
+	}
 }
 
 DamageClasses: {
@@ -90,4 +110,7 @@ DamageClasses: {
 	AirTrekDamage.DisplayName: Air Trek Damage
 }
 
-Projectiles.StarterBeyProjectile.DisplayName: Starter Bey Projectile
+Projectiles: {
+	StarterBeyProjectile.DisplayName: Starter Bey Projectile
+	GenericBeybladeProjectile.DisplayName: Generic Beyblade Projectile
+}

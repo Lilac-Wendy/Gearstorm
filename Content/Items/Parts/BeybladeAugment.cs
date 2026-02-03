@@ -1,4 +1,5 @@
-﻿using Gearstorm.Content.Projectiles.Beyblades;
+﻿using System.Collections.Generic;
+using Gearstorm.Content.Projectiles.Beyblades;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -11,10 +12,9 @@ public abstract class BeybladeAugment : ModItem
 {
     public virtual Color AugmentColor => Color.Transparent;
 
-    // Key para tradução da descrição
-    public virtual string AugmentDescriptionKey => "Mods.Gearstorm.Augments.DefaultDescription";
+    public virtual string AugmentDescriptionKey
+        => "Mods.Gearstorm.Augments.DefaultDescription";
 
-    // Se precisar exibir algum "valor" extra no tooltip (ex: -3 dano fixo, +600 lifetime)
     public virtual string ExtraDescription => "";
 
     public override void SetDefaults()
@@ -24,26 +24,51 @@ public abstract class BeybladeAugment : ModItem
         Item.ammo = Item.type;
         Item.rare = ItemRarityID.Blue;
         Item.value = Item.sellPrice(silver: 5);
+
+        Item.color = AugmentColor == Color.Transparent
+            ? Color.White
+            : AugmentColor;
     }
 
-    public virtual void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target) { }
+    // Chamado a cada frame no AI() da Beyblade
+    public virtual void UpdateAugment(BaseBeybladeProjectile beybladeProj) { }
 
-    public override void ModifyTooltips(System.Collections.Generic.List<TooltipLine> tooltips)
+    public virtual void OnBeybladeHit(
+        Projectile beyblade,
+        Vector2 hitNormal,
+        float impactStrength,
+        Projectile otherBeyblade,
+        NPC targetNPC
+    )
     {
-        // Acessando a nova chave "Header" dentro da seção "BeybladeAugments"
-        tooltips.Add(new TooltipLine(Mod, "AugHeader", 
-            Language.GetTextValue("Mods.Gearstorm.Items.BeybladeAugments.Header"))
+        if (targetNPC != null)
+        {
+            if (beyblade.ModProjectile is BaseBeybladeProjectile bb)
+            {
+                ApplyAugmentEffect(bb, targetNPC);
+            }
+        }
+    }
+
+    public virtual void ApplyAugmentEffect(
+        BaseBeybladeProjectile beybladeProj,
+        NPC target
+    )
+    {
+    }
+
+    public override void ModifyTooltips(List<TooltipLine> tooltips)
+    {
+        tooltips.Add(new TooltipLine(Mod, "AugHeader", Language.GetTextValue("Mods.Gearstorm.Items.BeybladeAugments.Header"))
         {
             OverrideColor = AugmentColor == Color.Transparent ? Color.Gold : AugmentColor
         });
 
         string desc = Language.GetTextValue(AugmentDescriptionKey);
-        if (!string.IsNullOrEmpty(desc))
+        
+        if (!string.IsNullOrEmpty(desc) && desc != AugmentDescriptionKey)
         {
-            tooltips.Add(new TooltipLine(Mod, "AugmentDescription", desc)
-            {
-                OverrideColor = Color.White
-            });
+            tooltips.Add(new TooltipLine(Mod, "AugmentDescription", desc));
         }
 
         if (!string.IsNullOrEmpty(ExtraDescription))

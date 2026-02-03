@@ -1,59 +1,42 @@
-﻿using Gearstorm.Content.Items.Parts;
-using Gearstorm.Content.Projectiles.Beyblades;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Gearstorm.Content.Projectiles.Beyblades;
 using Terraria;
 using Terraria.ID;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria.ModLoader;
 
-namespace Gearstorm.Content.Items.Augments;
+namespace Gearstorm.Content.Items.Parts.Augments;
 
 public class CrystalAugment : BeybladeAugment
 {
+    public override Color AugmentColor => Color.Pink;
     public override string Texture => "Gearstorm/Assets/Items/Parts/Augment";
-    public override Color AugmentColor => Color.Cyan;
-
-    // Agora expõe o texto no localization
-    public override string AugmentDescriptionKey => "Mods.Gearstorm.Augments.Crystal.Description";
-
-    // Esse augment aumenta dano indireto via shards → pode colocar um multiplicador
+    public override string ExtraDescription => "Shatters on impact, releasing homing crystal shards toward the nearest foe.";
 
     public override void PostDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
     {
         Texture2D texture = ModContent.Request<Texture2D>(Texture).Value;
-        Color glowColor = Color.Cyan * 0.8f;
-        spriteBatch.Draw(texture, position, null, glowColor, 0f, origin, scale, SpriteEffects.None, 0f);
+        spriteBatch.Draw(texture, position, null, Color.Pink * 0.8f, 0f, origin, scale, SpriteEffects.None, 0f);
     }
-    
-    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
-    {
-        int shardDamage = (int)(beybladeProj.Projectile.damage * 0.5f);
-        
-        for (int i = 0; i < 3; i++)
-        {
-            Vector2 shardVelocity = new(Main.rand.NextFloat(-4f, 4f), Main.rand.NextFloat(-4f, 4f));
-            Projectile.NewProjectile(
-                beybladeProj.Projectile.GetSource_FromThis(), 
-                beybladeProj.Projectile.Center, shardVelocity, 
-                ProjectileID.CrystalShard, shardDamage, 2f, 
-                Main.player[beybladeProj.Projectile.owner].whoAmI);
-        }
 
-        if (!beybladeProj.bonusesApplied)
+    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNPC)
+    {
+        if (impactStrength > 2f)
         {
-            beybladeProj.Projectile.timeLeft = 120;
-            beybladeProj.Projectile.penetrate = 1;
-            beybladeProj.bonusesApplied = true;
+            for (int i = 0; i < 3; i++)
+            {
+                Vector2 speed = hitNormal.RotatedByRandom(0.4f) * 6f;
+                Projectile.NewProjectile(beyblade.GetSource_FromThis(), beyblade.Center, speed, ProjectileID.CrystalShard, (int)(beyblade.damage * 0.5f), 2f, beyblade.owner);
+            }
         }
     }
 
     public override void AddRecipes()
     {
         Recipe recipe = CreateRecipe();
-        recipe.AddIngredient(ItemID.CrystalShard, 50);
-        recipe.AddIngredient(ItemID.SoulofLight, 5);
+        recipe.AddIngredient(ItemID.CrystalShard, 15);
         recipe.AddIngredient(ModContent.ItemType<BasicBladeItem>(), 5);
-        recipe.AddTile(TileID.MythrilAnvil);
+        recipe.AddTile(TileID.Anvils);
         recipe.Register();
     }
 }

@@ -12,7 +12,9 @@
 	<ItemGroup>
 	  <Folder Include="Assets\" />
 	  <Folder Include="Common\" />
-	  <Folder Include="Content\Systems\" />
+	  <Folder Include="Content\Items\AirTreks\" />
+	  <Folder Include="Content\Players\" />
+	  <Folder Include="Content\UI\" />
 	</ItemGroup>
 
 </Project>

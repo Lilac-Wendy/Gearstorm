@@ -2,6 +2,7 @@
 using Terraria.ID;
 using Terraria.ModLoader;
 using Gearstorm.Content.Data;
+using Terraria.DataStructures;
 
 namespace Gearstorm.Content.Items.Parts
 {
@@ -14,11 +15,17 @@ namespace Gearstorm.Content.Items.Parts
             mass: 1.0f, 
             density: 1.00f
         );
+
+        public BeybladePartType PartType => BeybladePartType.Base;
+        public override void SetStaticDefaults()
+        {
+            Main.RegisterItemAnimation(Item.type, new DrawAnimationVertical(5, 2));
+        }
         public override void SetDefaults()
         {
             Item.width = 44;
             Item.height = 18;
-            Item.maxStack = 99;
+            Item.maxStack = 1;
             Item.value = Item.sellPrice(silver: 2);
             Item.rare = ItemRarityID.White;
         }

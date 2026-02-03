@@ -6,17 +6,17 @@ using Terraria.DataStructures;
 
 namespace Gearstorm.Content.Items.Parts
 {
-    public class BasicBladeItem : ModItem, IHasBeybladeStats
+    public class GoldBladeItem : ModItem, IHasBeybladeStats
     {
-        public override string Texture => "Gearstorm/Assets/Items/Parts/Blade_Default";
+        public override string Texture => "Gearstorm/Assets/Items/Parts/Blade_Gold";
 
         public BeybladeStats Stats => new BeybladeStats(
-            damageBase: 10f,
-            knockbackPower: 0.4f,  
-            knockbackResistance: 1f, 
-            radius: 0.5f,
-            spinSpeed: 1.2f, 
-            spinDecay: 0.010f
+            damageBase: 15f,
+            knockbackPower: 0.9f,  
+            knockbackResistance: 2.8f, 
+            radius: 0.6f,
+            spinSpeed: 2.5f, 
+            spinDecay: 0.012f
         );
 
         public BeybladePartType PartType => BeybladePartType.Blade;
@@ -34,6 +34,5 @@ namespace Gearstorm.Content.Items.Parts
         {
             Main.RegisterItemAnimation(Item.type, new DrawAnimationVertical(5, 4));
         }
-        
     }
 }

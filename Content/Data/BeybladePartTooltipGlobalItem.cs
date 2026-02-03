@@ -25,9 +25,23 @@ namespace Gearstorm.Content.Data
                 OverrideColor = Color.Gold
             });
 
+            // Adiciona tipo da parte
+            string partTypeText = part.PartType switch
+            {
+                BeybladePartType.Base => "Base",
+                BeybladePartType.Blade => "Lâmina", 
+                BeybladePartType.Top => "Topo",
+                _ => "Parte"
+            };
+            
+            tooltips.Add(new TooltipLine(Mod, "PartType", $"Tipo: {partTypeText}")
+            {
+                OverrideColor = GetPartTypeColor(part.PartType)
+            });
+
             void AddStat(string key, float value, Color color)
             {
-                if (value == 0f) return; // ignora atributos zerados
+                if (value == 0f) return;
                 string text = Language.GetTextValue($"Mods.Gearstorm.Items.BeybladeStats.{key}", value);
                 tooltips.Add(new TooltipLine(Mod, $"Beyblade{key}", text) { OverrideColor = color });
             }
@@ -45,11 +59,16 @@ namespace Gearstorm.Content.Data
             AddStat("Radius", stats.Radius, Color.White);
             AddStat("SpinDecay", stats.SpinDecay, Color.Brown);
         }
-    }
-
-    // Interface para marcar os itens que têm stats
-    public interface IHasBeybladeStats
-    {
-        public BeybladeStats Stats { get; }
+        
+        private Color GetPartTypeColor(BeybladePartType partType)
+        {
+            return partType switch
+            {
+                BeybladePartType.Base => Color.LightBlue,
+                BeybladePartType.Blade => Color.LightGreen,
+                BeybladePartType.Top => Color.LightGoldenrodYellow,
+                _ => Color.White
+            };
+        }
     }
 }
