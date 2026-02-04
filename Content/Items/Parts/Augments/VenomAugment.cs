@@ -12,6 +12,10 @@ public class VenomAugment : BeybladeAugment
     public override Color AugmentColor => Color.Purple;
     public override string Texture => "Gearstorm/Assets/Items/Parts/Augment";
 
+    public override string ExtraDescription => "[c/800080:Acidic Dissolution]\n" +
+                                               "Coats the blade in Lethal Venom, stopping health regeneration\n" +
+                                               "[c/BF00FF:Vile Reaction:] Striking a venomed foe [c/FFFF00:injects Ichor], massiveley reducing armor\n" +
+                                               "'It doesn't just kill; it liquefies.'";
     public override void PostDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
     {
         Texture2D texture = ModContent.Request<Texture2D>(Texture).Value;
@@ -21,7 +25,17 @@ public class VenomAugment : BeybladeAugment
     public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
     {
         target.AddBuff(BuffID.Venom, 420);
-        // O debuff Venom por padrão em Terraria já reduz regeneração a zero e causa dano por tempo alto.
+        if (target.HasBuff(BuffID.Venom))
+        {
+            target.AddBuff(BuffID.Ichor, 180); 
+            
+            int erosionDamage = (int)(beybladeProj.Projectile.damage * 0.25f);
+            target.SimpleStrikeNPC(erosionDamage, 0);
+            
+            for (int i = 0; i < 5; i++) {
+                Dust.NewDust(target.position, target.width, target.height, DustID.Ichor, 0, 5);
+            }
+        }
     }
 
     public override void AddRecipes()

@@ -11,14 +11,18 @@ namespace Gearstorm.Content.Items.Parts.Augments;
 
 public class InfernoAugment : BeybladeAugment
 {
-    public override Color AugmentColor => Color.OrangeRed;
+    public override Color AugmentColor => Color.DarkOrange;
     public override string Texture => "Gearstorm/Assets/Items/Parts/Augment";
-    public override string ExtraDescription => "Creates a massive explosion on impact, spreading Hellfire to all nearby enemies.";
-
+    public override string ExtraDescription => 
+        "[c/FF4500:Thermal Cataclysm]\n" +
+        "Heavy impacts trigger a [c/FF8C00:Fiery Explosion] dealing 50% area damage\n" +
+        "Spreads [c/FF4500:Hellfire] to all enemies within a wide radius\n" +
+        "Explosions occur upon [c/FF8C00:NPC contact] or high-velocity collisions\n" +
+        "'Set the arena ablaze with every revolution'";
     public override void PostDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
     {
         Texture2D texture = ModContent.Request<Texture2D>(Texture).Value;
-        spriteBatch.Draw(texture, position, null, Color.OrangeRed * 0.9f, 0f, origin, scale, SpriteEffects.None, 0f);
+        spriteBatch.Draw(texture, position, null, Color.DarkOrange * 0.9f, 0f, origin, scale, SpriteEffects.None, 0f);
     }
 
     public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNPC)
@@ -49,7 +53,7 @@ public class InfernoAugment : BeybladeAugment
             if (npc.active && !npc.friendly && Vector2.Distance(npc.Center, beyblade.Center) < explosionRadius)
             {
                 npc.AddBuff(BuffID.OnFire3, 300); // Hellfire
-                npc.SimpleStrikeNPC((int)(beyblade.damage * 0.5f), 0);
+                npc.SimpleStrikeNPC((int)(beyblade.damage * 1.5f), 0);
             }
         }
     }

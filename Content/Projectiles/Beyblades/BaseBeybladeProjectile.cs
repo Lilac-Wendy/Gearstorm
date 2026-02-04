@@ -424,14 +424,14 @@ private void HandleImpact(
     if (visualIntensity > 0.5f)
     {
         float intensity = MathHelper.Clamp(visualIntensity, 0f, 1f);
-        float burst = MathF.Pow(intensity, 1.5f); // impacto mais agressivo no pico
+        float burst = MathF.Pow(intensity, 1.2f); // impacto mais agressivo no pico
 
         int dustCount = (int)MathHelper.Lerp(6, 18, burst);
 
         for (int i = 0; i < dustCount; i++)
         {
             float spread = MathHelper.Lerp(0.2f, 0.6f, burst);
-            float speed = MathHelper.Lerp(2.5f, 6f, Main.rand.NextFloat()) * burst;
+            float speed = MathHelper.Lerp(4f, 8f, Main.rand.NextFloat()) * burst;
 
             Vector2 velocity =
                 normal.RotatedByRandom(spread) * speed;
@@ -440,9 +440,9 @@ private void HandleImpact(
                 Projectile.Center,
                 DustID.FireworksRGB,
                 velocity,
-                120,
+                180,
                 AugmentColor == Color.Transparent ? Color.OrangeRed : AugmentColor,
-                MathHelper.Lerp(0.5f, 0.85f, MathF.Sqrt(burst))
+                MathHelper.Lerp(0.5f, 0.70f, MathF.Sqrt(burst))
             
 
             );

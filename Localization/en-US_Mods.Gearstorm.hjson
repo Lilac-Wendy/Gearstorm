@@ -103,6 +103,11 @@ Items: {
 		DisplayName: Venom Augment
 		Tooltip: ""
 	}
+
+	BoneAugment: {
+		DisplayName: Bone Augment
+		Tooltip: ""
+	}
 }
 
 DamageClasses: {

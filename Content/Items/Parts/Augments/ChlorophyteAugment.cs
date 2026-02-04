@@ -11,8 +11,12 @@ public class ChlorophyteAugment : BeybladeAugment
 {
     public override Color AugmentColor => Color.LimeGreen;
     public override string Texture => "Gearstorm/Assets/Items/Parts/Augment";
-    public override string ExtraDescription => "Releases life-stealing spores on impact. Healing scale is based on damage dealt.";
-
+    public override string ExtraDescription => 
+        "[c/32CD32:Chlorophyte Infusion]\n" +
+        "Blade impacts have a [c/90EE90:25% chance] to release a toxic [c/32CD32:Spore Cloud]\n" +
+        "Releasing spores [c/90EE90:siphons life energy] from the target\n" +
+        "Instantly restores [c/32CD32:50% of damage dealt] as health\n" +
+        "[c/FF4500:Hint: Life-steal efficiency scales infinitely with the Beyblade Damage]";
     public override void PostDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
     {
         Texture2D texture = ModContent.Request<Texture2D>(Texture).Value;
@@ -32,7 +36,6 @@ public class ChlorophyteAugment : BeybladeAugment
             
 
             int healAmount = (int)(beyblade.damage * 0.50f);
-            healAmount = (int)MathHelper.Clamp(healAmount, 1, 15);
 
             if (player.statLife < player.statLifeMax2)
             {

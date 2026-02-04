@@ -2,7 +2,6 @@
 
 	<!-- Import tModLoader mod properties -->
 	<Import Project="..\tModLoader.targets" />
-
 	<!-- General -->
 	<PropertyGroup>
 		
@@ -10,10 +9,10 @@
 
 	<!-- References -->
 	<ItemGroup>
-	  <Folder Include="Assets\" />
 	  <Folder Include="Common\" />
 	  <Folder Include="Content\Items\AirTreks\" />
 	  <Folder Include="Content\Players\" />
+	  <Folder Include="Content\Shaders\" />
 	  <Folder Include="Content\UI\" />
 	</ItemGroup>
 
