@@ -9,8 +9,8 @@ namespace Gearstorm.Tiles.Entities;
 
 public class CogwheelEntity : ModTileEntity
 {
-    private float rotation = 0f;
-    private float angularVelocity = 0f;
+    private float rotation;
+    private float angularVelocity;
 
     public override void Update()
     {

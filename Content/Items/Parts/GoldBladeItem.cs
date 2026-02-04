@@ -15,8 +15,10 @@ namespace Gearstorm.Content.Items.Parts
             knockbackPower: 0.9f,  
             knockbackResistance: 2.8f, 
             radius: 0.6f,
-            spinSpeed: 2.5f, 
-            spinDecay: 0.012f
+            baseSpinSpeed: 20f, 
+            spinDecay: 0.012f,
+            balance: 1f, 
+            mass: 1f
         );
 
         public BeybladePartType PartType => BeybladePartType.Blade;

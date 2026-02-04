@@ -19,20 +19,16 @@ namespace Gearstorm.Content.Projectiles.Beyblades
 
         public float currentSpinSpeed;
         protected float spinSpeed = 1f;
-        protected bool onGround = false;
-        protected int hitCooldown = 0;
-
+        protected bool onGround;
+        protected int hitCooldown;
+        private float dpsAccumulator;
+        private int hitRateTimer = 0;
         protected const int AmmoSlotStart = 54;
         protected const int AmmoSlotEnd = 57;
 
-        protected const float SpinFrameSpeed = 0.5f;
-        protected const float BaseHitsPerSecond = 4f;
-
-        protected int continuousHitCounter = 0;
-        protected List<NPC> recentlyHitNPCs = new();
-
+        protected const float SpinToDpsFactor = 4f;
+        public int shimmerFlightTimer = 0;
         public Color AugmentColor { get; set; } = Color.Transparent;
-        public bool bonusesApplied = false;
 
         public BeybladeStats stats;
 
@@ -84,8 +80,9 @@ namespace Gearstorm.Content.Projectiles.Beyblades
             );
 
             // ================== SPIN ==================
-            spinSpeed = stats.SpinSpeed > 0f ? stats.SpinSpeed : 1f;
+            spinSpeed = stats.BaseSpinSpeed;
             currentSpinSpeed = spinSpeed;
+
         }
 
 
@@ -256,7 +253,8 @@ private Color MixAugmentColors(List<Color> colors)
                 currentSpinSpeed = Math.Max(currentSpinSpeed - (0.02f / inertia), 0f);
             }
 
-            spinSpeed = MathHelper.Clamp(currentSpinSpeed, 0.1f, 3f);
+            spinSpeed = Math.Max(currentSpinSpeed, 0.1f);
+
 
             /* ================== BOUNCE (FIXED) ================== */
 
@@ -599,12 +597,16 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
 
         public override bool OnTileCollide(Vector2 oldVelocity)
         {
+            
+            float bounceFactor = (stats.Density < 0.5f) ? 1.0f : 0.5f; 
+            if (Projectile.velocity.Y != oldVelocity.Y)
+                Projectile.velocity.Y = -oldVelocity.Y * bounceFactor;
+            
             if (Projectile.velocity.X != oldVelocity.X)
                 Projectile.velocity.X = -oldVelocity.X * 0.8f;
 
             if (Projectile.velocity.Y != oldVelocity.Y)
                 Projectile.velocity.Y = -oldVelocity.Y * 0.5f;
-
             return false;
         }
 
@@ -612,47 +614,79 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
 
         #region Combat
 
-        private void ApplyContinuousDamage()
+private void ApplyContinuousDamage()
         {
-            float hitsPerSecond = BaseHitsPerSecond * spinSpeed;
-            int hitInterval = (int)(60f / hitsPerSecond);
+            // 1. Acumula o DPS no "balde"
+            float dps = Projectile.damage * SpinToDpsFactor * spinSpeed;
+            dpsAccumulator += dps / 60f;
+            
+            // 2. CALCULA O RITMO DOS HITS (A Mágica)
+            // Quanto maior o SpinSpeed, menor o intervalo.
+            // Exemplo: 
+            // Spin 1.0 -> delay 15 frames (4 hits/s)
+            // Spin 2.0 -> delay 7 frames (8 hits/s)
+            // Spin 5.0 -> delay 3 frames (20 hits/s)
+            int currentDelay = (int)(15f / Math.Max(spinSpeed, 0.1f));
 
-            if (++continuousHitCounter < hitInterval)
+            // TRAVA DE SEGURANÇA:
+            // Não deixamos bater mais rápido que a cada 3 frames.
+
+            if (currentDelay < 3) currentDelay = 3;
+
+            hitRateTimer++;
+
+            // Se ainda não chegou a hora de bater, espera acumular mais força
+            if (hitRateTimer < currentDelay) 
                 return;
 
-            continuousHitCounter = 0;
+            // Hora do Show!
+            hitRateTimer = 0;
 
-            float radius = Projectile.width / 2f;
+            // Se mesmo acumulando, não deu nem 1 de dano, aborta (spin muito baixo ou acabou a energia)
+            if (dpsAccumulator < 1f) return;
+
+            int damageThisHit = (int)dpsAccumulator;
+            dpsAccumulator = 0f; // Esvazia o balde
+
+            float radius = Projectile.width * 0.5f;
 
             foreach (NPC npc in Main.npc)
             {
                 if (!npc.active || npc.friendly) continue;
-                if (Vector2.Distance(Projectile.Center, npc.Center) > radius) continue;
+                
+                // Checagem de distância otimizada (Squared evita raiz quadrada)
+                if (Vector2.DistanceSquared(Projectile.Center, npc.Center) > radius * radius) continue;
 
+                // Aplica o dano acumulado
                 npc.StrikeNPC(new NPC.HitInfo
                 {
-                    Damage = (int)(Projectile.damage * (0.3f + spinSpeed * 0.1f)),
+                    Damage = damageThisHit,
                     Knockback = stats.KnockbackPower * 0.5f,
                     HitDirection = Math.Sign(npc.Center.X - Projectile.Center.X)
                 });
                 
-                for (int i = 0; i < 5; i++)
+                // Visual e Som
+                // Reduzimos a quantidade de partículas se estiver batendo muito rápido para não lagar
+                if (currentDelay > 5 || Main.rand.NextBool(3)) 
                 {
-                    Dust d = Dust.NewDustPerfect(
-                        npc.Center,
-                        DustID.Blood,
-                        Vector2.Normalize(npc.Center - Projectile.Center) * 2f,
-                        100,
-                        AugmentColor == Color.Transparent ? Color.Red : AugmentColor,
-                        1f
-                    );
-                    d.noGravity = true;
+                    Dust.NewDustPerfect(npc.Center, DustID.Blood, 
+                        Vector2.Normalize(npc.Center - Projectile.Center) * 2f, 
+                        80, AugmentColor == Color.Transparent ? Color.Red : AugmentColor, 0.8f);
                 }
-                
-                SoundEngine.PlaySound(
-                    SoundID.NPCHit4 with { Volume = 0.5f, PitchVariance = 0.2f },
-                    npc.Center
-                );
+
+                // O som muda o pitch conforme a velocidade
+                // Somente toca som se não estiver spamando rápido demais (para não estourar o ouvido)
+                if (currentDelay > 8 || Main.rand.NextBool(3)) 
+                {
+                    SoundEngine.PlaySound(
+                        SoundID.NPCHit4 with { 
+                            Volume = 0.4f, 
+                            Pitch = MathHelper.Clamp(spinSpeed * 0.15f, -0.6f, 0.6f),
+                            MaxInstances = 3
+                        },
+                        npc.Center
+                    );
+                }
             }
         }
 

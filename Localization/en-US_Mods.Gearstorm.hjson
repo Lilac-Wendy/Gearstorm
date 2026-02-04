@@ -108,6 +108,11 @@ Items: {
 		DisplayName: Bone Augment
 		Tooltip: ""
 	}
+
+	ShimmerAugment: {
+		Tooltip: ""
+		DisplayName: Shimmer Augment
+	}
 }
 
 DamageClasses: {
@@ -118,4 +123,11 @@ DamageClasses: {
 Projectiles: {
 	StarterBeyProjectile.DisplayName: Starter Bey Projectile
 	GenericBeybladeProjectile.DisplayName: Generic Beyblade Projectile
+}
+
+Buffs: {
+	ShimmerLevitationBuff: {
+		DisplayName: Shimmer Levitation Buff
+		Description: Mods.Gearstorm.Buffs.ShimmerLevitationBuff.Description
+	}
 }

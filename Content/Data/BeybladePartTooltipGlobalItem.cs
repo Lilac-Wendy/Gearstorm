@@ -49,7 +49,7 @@ namespace Gearstorm.Content.Data
             AddStat("Damage", stats.DamageBase, Color.Red);
             AddStat("Mass", stats.Mass, Color.Yellow);
             AddStat("Density", stats.Density, Color.Orange);
-            AddStat("SpinSpeed", stats.SpinSpeed, Color.LightGreen);
+            AddStat("SpinSpeed", stats.BaseSpinSpeed, Color.LightGreen);
             AddStat("Balance", stats.Balance, Color.Cyan);
             AddStat("TipFriction", stats.TipFriction, Color.Gray);
             AddStat("KnockbackPower", stats.KnockbackPower, Color.Pink);

@@ -15,7 +15,7 @@ namespace Gearstorm.Content.Items.Parts
             knockbackPower: 0.4f,  
             knockbackResistance: 1f, 
             radius: 0.5f,
-            spinSpeed: 1.2f, 
+            baseSpinSpeed: 1.2f, 
             spinDecay: 0.010f
         );
 

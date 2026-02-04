@@ -17,7 +17,7 @@ namespace Gearstorm.Content.Systems
         private const int SLOT_SIZE = 52;
         private const int SLOT_SPACING = 58;
         
-        private bool mouseWasPressed = false;
+        private bool mouseWasPressed;
 
         // Centraliza a posição para evitar que o clique e o desenho fiquem desalinhados
         private Vector2 GetUIBasePosition()

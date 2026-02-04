@@ -12,7 +12,7 @@ namespace Gearstorm.Content.Items.Parts
 
         public BeybladeStats Stats => new BeybladeStats(
             mass: 1.0f,
-            balance: 0.85f,
+            balance: 2.00f,
             height: 0.5f
         );
 
