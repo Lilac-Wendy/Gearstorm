@@ -9,7 +9,6 @@ using Terraria.ModLoader.IO;
 using Terraria.DataStructures;
 
 using Gearstorm.Content.Data;
-using Gearstorm.Content.Globals;
 using Gearstorm.Content.Projectiles.Beyblades;
 using Gearstorm.Content.Items.Parts;
 

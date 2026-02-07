@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using Gearstorm.Content.Items.Beyblades;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ModLoader;
-using Gearstorm.Content.Data;
-using Gearstorm.Content.Items.Beyblades;
 
-namespace Gearstorm.Content.Globals
+namespace Gearstorm.Content.Data
 {
     public class BeybladeLauncherGlobalItem : GlobalItem
     {
@@ -17,10 +16,6 @@ namespace Gearstorm.Content.Globals
         // ==================================================
         public override bool InstancePerEntity => true;
 
-        // ==================================================
-        // CACHE DE STATUS
-        // ==================================================
-        public BeybladeStats? CachedStats;
 
         // ==================================================
         // APLICAÇÃO
@@ -35,8 +30,6 @@ namespace Gearstorm.Content.Globals
         // ==================================================
         public void RecalculateStats(BeybladeLauncherItem launcher)
         {
-            CachedStats = null;
-
             if (launcher.BeybladeParts == null || launcher.BeybladeParts.Length < 3)
                 return;
 
@@ -51,7 +44,7 @@ namespace Gearstorm.Content.Globals
             if (bladeItem.ModItem is not BeybladeStats.IHasBeybladeStats blade) return;
             if (baseItem.ModItem  is not BeybladeStats.IHasBeybladeStats @base) return;
 
-            CachedStats =  BeybladeStats.CombineStats(
+            BeybladeStats.CombineStats(
                 basePart: @base,
                 bladePart: blade,
                 topPart: top
@@ -106,93 +99,54 @@ namespace Gearstorm.Content.Globals
     Color SECOND  = Color.Cyan;        // ritmo / spin
     Color TERT    = Color.LightGray;   // físico / controle
 
-    tooltips.Add(new TooltipLine(Mod, "BeyHeader", "--- STATUS DO BEYBLADE ---")
+    tooltips.Add(new TooltipLine(Mod, "BeyHeader", "--- BEYBLADE STATS ---")
     {
         OverrideColor = HEADER
     });
 
-    // ==============================
-    // OFENSIVO
-    // ==============================
-    Add(tooltips, "Dano Base", s.DamageBase, PRIMARY);
+    Add(tooltips, "Base Damage", s.DamageBase, PRIMARY);
+    Add(tooltips, "Impact Power", s.KnockbackPower, PRIMARY);
 
-    // Chance de crítico
-    float critChanceTotal = s.BaseSpinSpeed * 20f;
-    float critChance = MathHelper.Clamp(critChanceTotal, 0f, 100f);
-
+// Critical Chance (Spin × 20%)
+    float critChance = MathF.Min(100f, s.BaseSpinSpeed * 20f);
     tooltips.Add(new TooltipLine(
         Mod,
         "BeyCritChance",
-        $"Chance de Crítico: {critChance:F0}%"
+        $"Critical Chance: {critChance:F0}%"
     )
     {
         OverrideColor = PRIMARY
     });
 
-    // Multiplicador crítico REAL
-    float critMultiplier = 2f;
-    if (s.BaseSpinSpeed > 5f)
-        critMultiplier *= 1f + (s.BaseSpinSpeed - 5f) * 0.4f;
-
+// Critical Multiplier (Over-Spin)
     tooltips.Add(new TooltipLine(
         Mod,
         "BeyCritMult",
-        $"Multiplicador Crítico: ×{critMultiplier:F1}"
+        $"Critical Multiplier: ×{s.CritMultiplier:F2}"
     )
     {
         OverrideColor = PRIMARY
     });
 
-    // Armor Pen (Over-Spinning)
-    float armorPen = s.BaseSpinSpeed * 10f;
-    if (armorPen > 0f)
-    {
-        tooltips.Add(new TooltipLine(
-            Mod,
-            "BeyArmorPen",
-            $"Perfuração de Armadura: +{armorPen:F0}"
-        )
-        {
-            OverrideColor = PRIMARY
-        });
-    }
-
-    Add(tooltips, "Impacto", s.KnockbackPower, PRIMARY);
+// SPIN / FLOW
+    Add(tooltips, "Spin Speed", s.BaseSpinSpeed, SECOND);
+    Add(tooltips, "Spin Decay", s.SpinDecay, SECOND);
+    Add(tooltips, "Move Speed", s.MoveSpeed, SECOND);
 
     // ==============================
-    // RITMO / SPIN
+    // PHYSICS / CONTROL
     // ==============================
-    Add(tooltips, "Spin Base", s.BaseSpinSpeed, SECOND);
-    Add(tooltips, "Decaimento", s.SpinDecay, SECOND);
+    Add(tooltips, "Mass", s.Mass, TERT);
+    Add(tooltips, "Density", s.Density, TERT);
+    Add(tooltips, "Moment of Inertia", s.MomentOfInertia, TERT);
 
-    float aps = CalculateAttacksPerSecond(s);
-    if (aps > 0f)
-    {
-        tooltips.Add(new TooltipLine(
-            Mod,
-            "BeyAPS",
-            $"Ataques por Segundo: {aps:F2}"
-        )
-        {
-            OverrideColor = SECOND
-        });
-    }
+    Add(tooltips, "Radius", s.Radius, TERT);
+    Add(tooltips, "Height", s.Height, TERT);
 
-    Add(tooltips, "Velocidade", s.MoveSpeed, SECOND);
+    Add(tooltips, "Balance", s.Balance, TERT);
+    Add(tooltips, "Tip Friction", s.TipFriction, TERT);
+    Add(tooltips, "Knockback Resistance", s.KnockbackResistance, TERT);
 
-    // ==============================
-    // FÍSICO / CONTROLE
-    // ==============================
-    Add(tooltips, "Massa", s.Mass, TERT);
-    Add(tooltips, "Densidade", s.Density, TERT);
-    Add(tooltips, "Inércia", s.MomentOfInertia, TERT);
-
-    Add(tooltips, "Raio", s.Radius, TERT);
-    Add(tooltips, "Altura", s.Height, TERT);
-
-    Add(tooltips, "Equilíbrio", s.Balance, TERT);
-    Add(tooltips, "Atrito", s.TipFriction, TERT);
-    Add(tooltips, "Resistência", s.KnockbackResistance, TERT);
 }
 
 
@@ -200,18 +154,6 @@ namespace Gearstorm.Content.Globals
         // ==================================================
         // UTIL
         // ==================================================
-        private float CalculateAttacksPerSecond(BeybladeStats s)
-        {
-            float effectiveSpin = s.BaseSpinSpeed * (1f - s.SpinDecay * 0.5f);
-
-            if (effectiveSpin <= 0f)
-                return 0f;
-
-            const float hitFactor = 0.25f;
-
-            return MathF.Max(0f, effectiveSpin * hitFactor);
-        }
-
         private void Add(
             List<TooltipLine> tooltips,
             string label,

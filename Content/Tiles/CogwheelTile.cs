@@ -1,5 +1,5 @@
-﻿using Gearstorm.Items;
-using Gearstorm.Tiles.Entities;
+﻿using Gearstorm.Content.Items;
+using Gearstorm.Content.Tiles.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;

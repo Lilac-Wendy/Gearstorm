@@ -1,12 +1,10 @@
 ﻿using System;
-using Gearstorm.Content.Items.Parts;
 using Gearstorm.Content.Projectiles.Beyblades;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
-using Terraria.ModLoader;
 
-namespace Gearstorm.Content.Items.Augments
+namespace Gearstorm.Content.Items.Parts.Augments
 {
     public class EvilAugment : BeybladeAugment
     {

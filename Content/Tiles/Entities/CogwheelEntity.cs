@@ -1,11 +1,9 @@
-﻿using Gearstorm.Content.Tiles;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.DataStructures;
-using Terraria.ModLoader;
 using Terraria.ID;
+using Terraria.ModLoader;
 
-namespace Gearstorm.Tiles.Entities;
+namespace Gearstorm.Content.Tiles.Entities;
 
 public class CogwheelEntity : ModTileEntity
 {

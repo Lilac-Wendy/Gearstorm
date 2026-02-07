@@ -143,6 +143,21 @@ Items: {
 		DisplayName: Beetle Obsidian Augment
 		Tooltip: ""
 	}
+
+	PrecisionAugment: {
+		DisplayName: Precision Augment
+		Tooltip: ""
+	}
+
+	CriticalAugment: {
+		DisplayName: Critical Augment
+		Tooltip: ""
+	}
+
+	KineticAugment: {
+		DisplayName: Kinetic Augment
+		Tooltip: ""
+	}
 }
 
 DamageClasses: {

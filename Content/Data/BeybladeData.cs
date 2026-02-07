@@ -11,8 +11,8 @@ namespace Gearstorm.Content.Data
         public float Height;
         public float BaseSpinSpeed;
         public float SpinDecay;
-        public float CritChance { get; set; } = 0f;
-        public float CritMultiplier { get; set; } = 2f;
+        public float CritChance;
+        public float CritMultiplier;
         public float Mass;
         public float Balance;
         public float Density;
@@ -34,7 +34,7 @@ namespace Gearstorm.Content.Data
             float tipFriction = 0f,
             float moveSpeed = 0f,
             float momentOfInertia = 0f,
-            float critChance = 0f, // ADICIONE ESTE
+            float critChance = 0f, 
             float critMultiplier = 2f) // E ESTE
         {
             DamageBase = damageBase;
@@ -50,8 +50,8 @@ namespace Gearstorm.Content.Data
             TipFriction = tipFriction;
             MoveSpeed = moveSpeed;
             MomentOfInertia = momentOfInertia;
-            CritChance = critChance; // INICIALIZE
-            CritMultiplier = critMultiplier; // INICIALIZE
+            CritChance = critChance; 
+            CritMultiplier = critMultiplier; 
         }
 
         public enum BeybladePartType
@@ -67,43 +67,107 @@ namespace Gearstorm.Content.Data
             BeybladePartType PartType { get; }
         }
 
-        public static BeybladeStats CombineStats(
-            IHasBeybladeStats basePart,
-            IHasBeybladeStats bladePart,
-            IHasBeybladeStats topPart)
-        {
-            var b = basePart.Stats;
-            var l = bladePart.Stats;
-            var t = topPart.Stats;
+public static BeybladeStats CombineStats(
+    IHasBeybladeStats basePart,
+    IHasBeybladeStats bladePart,
+    IHasBeybladeStats topPart)
+{
+    var b = basePart.Stats;
+    var l = bladePart.Stats;
+    var t = topPart.Stats;
 
-            float finalBaseSpin = (b.BaseSpinSpeed + l.BaseSpinSpeed) * t.Balance;
+    // =========================
+    // MASS / GEOMETRY
+    // =========================
+    float totalMass = b.Mass + l.Mass + t.Mass;
+    float finalRadius = MathF.Max(b.Radius, MathF.Max(l.Radius, t.Radius));
 
-            float totalMass = b.Mass + l.Mass + t.Mass;
-            float finalRadius = MathF.Max(b.Radius, MathF.Max(l.Radius, t.Radius));
+    // =========================
+    // SPIN
+    // =========================
+    float finalBaseSpin =
+        (b.BaseSpinSpeed + l.BaseSpinSpeed)
+        * MathF.Max(0.1f, t.Balance);
 
-            // CALCULA CHANCE CRÍTICA: Blade fornece base, Top melhora
-            float critChance = l.CritChance * (1f + t.Balance * 0.5f);
+    // =========================
+// CRITICAL SYSTEM (SPIN-BASED)
+// =========================
 
-            // CALCULA MULTIPLICADOR: Base fornece base, Blade e Top melhoram
-            float critMultiplier = 2f + (t.CritMultiplier - 2f) * 0.3f;
+/*
+    TOOLTIP MATH:
+    - Crit Chance = SpinSpeed × 20%
+    - 5.0 Spin = 100% crit
+    - Above 5.0 Spin:
+        +40% Crit Damage per extra Spin
+    - Base crit multiplier = 2.0
+*/
 
-            return new BeybladeStats(
-                damageBase: l.DamageBase + (t.DamageBase * 0.2f),
-                knockbackPower: l.KnockbackPower + (totalMass * 0.5f),
-                knockbackResistance: b.KnockbackResistance + t.KnockbackResistance + (totalMass * 0.2f),
-                radius: finalRadius,
-                height: b.Height + t.Height,
-                baseSpinSpeed: finalBaseSpin,
-                spinDecay: l.SpinDecay * (1.1f - t.Balance),
-                mass: totalMass,
-                balance: t.Balance,
-                density: (b.Density + l.Density + t.Density) / 3f,
-                tipFriction: b.TipFriction,
-                moveSpeed: b.MoveSpeed,
-                momentOfInertia: totalMass * finalRadius,
-                critChance: critChance, // ADICIONADO
-                critMultiplier: critMultiplier // ADICIONADO
-            );
-        }
+    float spin = l.BaseSpinSpeed;
+
+// Crit chance: 20% por 1.0 Spin
+    float rawCritChance = spin * 0.20f;
+
+// Cap em 100%
+    float critChance = MathF.Min(rawCritChance, 1f);
+
+// Over-Spinning começa após 5.0 Spin
+    float overflowSpin = MathF.Max(0f, spin - 5f);
+
+// Crit multiplier base + overflow
+    float critMultiplier = 2f + overflowSpin * 0.40f;
+    
+
+    // =========================
+    // FINAL STATS
+    // =========================
+    return new BeybladeStats(
+        damageBase:
+            l.DamageBase + t.DamageBase * 0.2f,
+
+        knockbackPower:
+            l.KnockbackPower + totalMass * 0.5f,
+
+        knockbackResistance:
+            b.KnockbackResistance
+            + t.KnockbackResistance
+            + totalMass * 0.2f,
+
+        radius: finalRadius,
+
+        height:
+            b.Height + t.Height,
+
+        baseSpinSpeed:
+            finalBaseSpin,
+
+        spinDecay:
+            l.SpinDecay * (1.1f - t.Balance),
+
+        mass:
+            totalMass,
+
+        balance:
+            t.Balance,
+
+        density:
+            (b.Density + l.Density + t.Density) / 3f,
+
+        tipFriction:
+            b.TipFriction,
+
+        moveSpeed:
+            b.MoveSpeed,
+
+        momentOfInertia:
+            totalMass * finalRadius,
+
+        critChance:
+            critChance,
+
+        critMultiplier:
+            critMultiplier
+    );
+}
+
     }
 }

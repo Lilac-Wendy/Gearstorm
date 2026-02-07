@@ -3,7 +3,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace Gearstorm.Items;
+namespace Gearstorm.Content.Items;
 
 // This class defines the item that places the Cogwheel tile.
 public class CogwheelItem : ModItem

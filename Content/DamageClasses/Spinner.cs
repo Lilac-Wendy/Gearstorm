@@ -10,7 +10,6 @@
                 return StatInheritanceData.None;
             }
             public override bool UseStandardCritCalcs => false;
-            
             public override LocalizedText DisplayName => Language.GetText("Mods.Gearstorm.DamageClasses.Spinner.DisplayName");
             public override bool GetEffectInheritance(DamageClass damageClass)
             {

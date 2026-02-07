@@ -1,13 +1,12 @@
-﻿using Gearstorm.Content.Items.Parts;
+﻿using System;
+using Gearstorm.Content.Projectiles;
 using Gearstorm.Content.Projectiles.Beyblades;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
-using System;
-using Gearstorm.Content.Projectiles;
 
-namespace Gearstorm.Content.Items.Augments
+namespace Gearstorm.Content.Items.Parts.Augments
 {
     public class VortexAugment : BeybladeAugment
     {
