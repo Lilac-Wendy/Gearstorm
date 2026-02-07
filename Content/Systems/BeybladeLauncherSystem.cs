@@ -201,14 +201,14 @@ namespace Gearstorm.Content.Systems
         
         private bool IsValidPartForSlot(Item item, int slotIndex)
         {
-            if (item.ModItem is not IHasBeybladeStats partStats) 
+            if (item.ModItem is not BeybladeStats.IHasBeybladeStats partStats) 
                 return false;
     
             return slotIndex switch
             {
-                0 => partStats.PartType == BeybladePartType.Top,
-                1 => partStats.PartType == BeybladePartType.Blade,
-                2 => partStats.PartType == BeybladePartType.Base,
+                0 => partStats.PartType == BeybladeStats.BeybladePartType.Top,
+                1 => partStats.PartType == BeybladeStats.BeybladePartType.Blade,
+                2 => partStats.PartType == BeybladeStats.BeybladePartType.Base,
                 _ => false
             };
         }

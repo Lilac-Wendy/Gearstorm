@@ -6,17 +6,17 @@ using Terraria.DataStructures;
 
 namespace Gearstorm.Content.Items.Parts
 {
-    public class BasicTopItem : ModItem, IHasBeybladeStats
+    public class BasicTopItem : ModItem, BeybladeStats.IHasBeybladeStats
     {
         public override string Texture => "Gearstorm/Assets/Items/Parts/Top_Default";
 
-        public BeybladeStats Stats => new BeybladeStats(
-            mass: 1.0f,
-            balance: 2.00f,
-            height: 0.5f
-        );
-
-        public BeybladePartType PartType => BeybladePartType.Top;
+        public BeybladeStats Stats => new BeybladeStats 
+        {  
+            Mass = 1.0f,
+            Balance = 2.00f,
+            Height = 0.5f
+        };
+        public BeybladeStats.BeybladePartType PartType => BeybladeStats.BeybladePartType.Top;
 
         public override void SetStaticDefaults()
         {

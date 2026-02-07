@@ -11,12 +11,12 @@ namespace Gearstorm.Content.Data
         public override bool AppliesToEntity(Item item, bool lateInstantiation)
         {
             // Só aplica se o item tiver BeybladeStats
-            return item.ModItem is IHasBeybladeStats;
+            return item.ModItem is BeybladeStats.IHasBeybladeStats;
         }
 
         public override void ModifyTooltips(Item item, List<TooltipLine> tooltips)
         {
-            if (item.ModItem is not IHasBeybladeStats part) return;
+            if (item.ModItem is not BeybladeStats.IHasBeybladeStats part) return;
 
             BeybladeStats stats = part.Stats;
 
@@ -28,9 +28,9 @@ namespace Gearstorm.Content.Data
             // Adiciona tipo da parte
             string partTypeText = part.PartType switch
             {
-                BeybladePartType.Base => "Base",
-                BeybladePartType.Blade => "Lâmina", 
-                BeybladePartType.Top => "Topo",
+                BeybladeStats.BeybladePartType.Base => "Base",
+                BeybladeStats.BeybladePartType.Blade => "Lâmina", 
+                BeybladeStats.BeybladePartType.Top => "Topo",
                 _ => "Parte"
             };
             
@@ -60,13 +60,13 @@ namespace Gearstorm.Content.Data
             AddStat("SpinDecay", stats.SpinDecay, Color.Brown);
         }
         
-        private Color GetPartTypeColor(BeybladePartType partType)
+        private Color GetPartTypeColor(BeybladeStats.BeybladePartType partType)
         {
             return partType switch
             {
-                BeybladePartType.Base => Color.LightBlue,
-                BeybladePartType.Blade => Color.LightGreen,
-                BeybladePartType.Top => Color.LightGoldenrodYellow,
+                BeybladeStats.BeybladePartType.Base => Color.LightBlue,
+                BeybladeStats.BeybladePartType.Blade => Color.LightGreen,
+                BeybladeStats.BeybladePartType.Top => Color.LightGoldenrodYellow,
                 _ => Color.White
             };
         }

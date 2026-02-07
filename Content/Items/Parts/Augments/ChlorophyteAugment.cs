@@ -29,7 +29,6 @@ public class ChlorophyteAugment : BeybladeAugment
 
         if (targetNPC != null && Main.rand.NextBool(4)) // 25% de chance de ativar o roubo de vida
         {
-            // SporeCloud da 1.4.4
             Projectile.NewProjectile(beyblade.GetSource_FromThis(), targetNPC.Center, Vector2.Zero, ProjectileID.SporeCloud, (int)(beyblade.damage * 0.5f), 1f, beyblade.owner);
             
             Player player = Main.player[beyblade.owner];

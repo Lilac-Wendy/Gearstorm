@@ -1,4 +1,6 @@
 ﻿using System;
+using Gearstorm.Content.Buffs;
+using Gearstorm.Content.Data;
 using Gearstorm.Content.Projectiles.Beyblades;
 using Terraria;
 using Terraria.ID;
@@ -18,18 +20,25 @@ public class AeroGlideAugment : BeybladeAugment
     {
         get
         {
+
             string desc = "[c/87CEEB:Atmospheric Displacement]\n"
-                          + "Negates gravity and converts [c/ADD8E6:Player Speed] into rotation:\n"
-                          + "Every [c/FFFFFF:20% Speed Bonus] increases spin by [c/87CEEB:1 hit/sec];\n"
-                          + "Impacts [c/ADD8E6:reduce Beyblade Mass], causing higher bounces and lift.\n";
+                          + "Alters aerodynamic response, enabling sustained lift through momentum.\n"
+                          + "Each [c/FFFFFF:20% Move Speed] of the Player grants [c/87CEEB:+10% Crit Chance].\n"
+                          + "Continuously accelerates up to a speed cap.\n"
+                          + "Successive hits between Beyblades [c/ADD8E6:shred 0.4 Mass], increasing airtime and rebound.\n"
+                          + "On hit: launches enemies upward and destabilizes movement.\n";
+
 
             if (Main.hardMode)
             {
-                desc += "[c/FFFFFF:Hardmode Bonus: Face of the Wind] \n"
-                        +"Beyblade [c/ADD8E6:always critically slices through] enemies with terminal velocity, 50% of the speed is converted to bonus damage.\n";
+                desc += "\n[c/FFFFFF:Hardmode: Face of the Wind]\n"
+                        + "Reaches [c/ADD8E6:Supercritical Velocity] (Higher speed cap).\n"
+                        + "Hits deal additional damage based on current velocity.\n"
+                        + "Strikes extend Beyblade lifetime and boost post-impact speed.\n"
+                        + "Enemies have a [c/ADD8E6:25% chance] to be directionally reversed on impact.\n";
             }
-
-            desc += "'Swift as a gale, untouchable as the horizon.'";
+            
+            desc += "\n[c/808080:'Momentum is law. The wind merely enforces it.']";
             return desc;
         }
     }
@@ -39,35 +48,24 @@ public class AeroGlideAugment : BeybladeAugment
         Projectile p = beybladeProj.Projectile;
         Player player = Main.player[p.owner];
 
-        // 1. NEGAR GRAVIDADE TOTAL
-        // Se houver qualquer força puxando para baixo, anulamos instantaneamente.
-        if (p.velocity.Y > 0) p.velocity.Y = 0;
-        p.velocity.Y -= 0.1f; // Força leve de flutuação constante
-
-        // 2. ESCALONAMENTO DE SPIN (Player Speed -> Hit Speed)
-        // Pegamos o bônus de moveSpeed (ex: 1.4f é +40%). 
-        // A cada 0.2f (20%), adicionamos um multiplicador de rotação.
-        float speedRatio = (player.moveSpeed - 1f) / 0.20f;
-        if (speedRatio > 0)
+        if (float.IsNaN(p.velocity.X) || float.IsNaN(p.velocity.Y)) p.velocity = Vector2.UnitX * 2f;
+        
+        float movementBonus = (player.moveSpeed - 1f) / 0.20f;
+        if (movementBonus > 0)
         {
-            // Ajusta o cooldown interno de dano da Beyblade para bater mais rápido
-            beybladeProj.currentSpinSpeed += speedRatio * 0.15f; 
+            p.CritChance = (int)(10 * movementBonus); 
         }
+        
+        float targetMaxSpeed = Main.hardMode ? 35f : 18f;
+        float currentSpeed = p.velocity.Length();
 
-        // 3. ACELERAÇÃO ATMOSFÉRICA
-        float accel = Main.hardMode ? 1.03f : 1.015f;
-        p.velocity *= accel;
-
-        // Limite de Velocidade Terminal
-        float maxSpeed = Main.hardMode ? 32f : 20f;
-        if (p.velocity.Length() > maxSpeed) p.velocity = Vector2.Normalize(p.velocity) * maxSpeed;
-
-        // Visual (Rastro de vento)
-        if (Main.rand.NextBool(4))
+        if (currentSpeed < targetMaxSpeed)
         {
-            Dust d = Dust.NewDustDirect(p.position, p.width, p.height, DustID.Cloud, 0f, 0f, 150, default, 0.7f);
-            d.noGravity = true;
-            d.velocity *= 0.1f;
+            p.velocity *= 1.02f;
+        }
+        else if (currentSpeed > targetMaxSpeed + 2f)
+        {
+            p.velocity = Vector2.Normalize(p.velocity) * targetMaxSpeed;
         }
     }
 
@@ -75,43 +73,60 @@ public class AeroGlideAugment : BeybladeAugment
     {
         Projectile p = beybladeProj.Projectile;
 
-        if (Main.hardMode)
-        {
-            // BONUS DAMAGE: 50% da velocidade atual vira dano base extra
-            float velocityDamage = p.velocity.Length() * 0.5f;
-            p.damage += (int)velocityDamage;
+        // 5. IMPACTO CINÉTICO (Substituindo o True Damage)
+        // 30% do dano da Beyblade + Bônus por Velocidade atual.
+        float kineticFactor = p.velocity.Length() * 0.02f; // Ex: 35 de speed = +70% de dano no estilhaço
+        int shatterDamage = (int)(p.damage * (0.30f + kineticFactor));
 
-            // FORÇAR CRÍTICO
-            // No TML, para garantir crítico no ApplyAugmentEffect, manipulamos o hit info
-            // Mas visualmente, ativamos partículas de crítico
-            for (int i = 0; i < 5; i++) {
-                Dust.NewDust(target.position, target.width, target.height, DustID.Enchanted_Gold, 0, -2);
-            }
+        // Aplica um hit secundário oficial do Terraria (Pode ser crítico e respeita defesa)
+        var hit = target.CalculateHitInfo(shatterDamage, 1, true, 0);
+        target.StrikeNPC(hit);
+
+        // Feedback visual
+        for (int i = 0; i < 6; i++) {
+            Dust d = Dust.NewDustDirect(target.position, target.width, target.height, DustID.Cloud);
+            d.noGravity = true;
+            d.velocity *= 1.5f;
         }
     }
 
-    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNPC)
+public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNPC)
+{
+
+    var beyProj = beyblade.ModProjectile as BaseBeybladeProjectile;
+    if (beyProj == null)
+        return;
+
+    if (targetNPC != null)
     {
-        var beyProj = beyblade.ModProjectile as BaseBeybladeProjectile;
-        if (beyProj == null) return;
+        // sempre aplica o deslocamento vertical
+        targetNPC.velocity.Y -= 2f;
 
-        // 1. REDUÇÃO DE MASSA (Tornando-a mais leve e arisca)
-        beyProj.stats.Mass = Math.Max(0.2f, beyProj.stats.Mass - 0.5f);
-        
-        // 2. LIFT (Empuxo vertical no impacto)
-        beyblade.velocity.Y -= 6f; 
-
-        // 3. MECÂNICA HARDMODE: SLICE THROUGH (Atravessar)
-        if (Main.hardMode && targetNPC != null)
+        // 25% de chance de inverter a direção
+        if (Main.rand.NextFloat() < 0.25f)
         {
-            // Para "atravessar", ignoramos a hitNormal (que faria ricochetear)
-            // e mantemos a direção original com um pequeno boost.
-            beyblade.velocity = Vector2.Normalize(beyblade.oldVelocity) * (beyblade.oldVelocity.Length() * 1.05f);
-            
-            // Efeito sonoro de corte "fino"
-            Terraria.Audio.SoundEngine.PlaySound(SoundID.Item71 with { Pitch = 0.5f });
+            targetNPC.direction *= -1;
         }
     }
+
+// 1. REDUÇÃO DE MASSA (simples, previsível, configurável externamente)
+    beyProj.stats.Mass = Math.Max(0.1f, beyProj.stats.Mass - 0.4f);
+
+// 2. LIFT AERODINÂMICO DIRETO
+    beyblade.velocity.Y -= 10f;
+    beyblade.timeLeft += 10;
+
+// 3. HARDMODE SLICE 
+    if (Main.hardMode && targetNPC != null)
+    {
+        Vector2 ov = beyblade.oldVelocity;
+
+        if (ov.LengthSquared() > 0.001f) { beyblade.velocity = ov * 1.02f; }
+        else
+        { beyblade.velocity += Vector2.UnitX * 0.5f; }
+        Terraria.Audio.SoundEngine.PlaySound(SoundID.Item105 with { Pitch = 0.4f, Volume = 0.6f });
+    }
+}
 
     // Mantendo seu PostDraw e Recipes...
     public override void PostDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)
@@ -123,7 +138,7 @@ public class AeroGlideAugment : BeybladeAugment
     public override void AddRecipes()
     {
         Recipe recipe = CreateRecipe();
-        recipe.AddIngredient(ItemID.Feather, 10);
+        recipe.AddIngredient(ItemID.Feather, 100);
         recipe.AddIngredient(ModContent.ItemType<BasicBladeItem>(), 5);
         recipe.AddTile(TileID.Anvils);
         recipe.Register();

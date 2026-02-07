@@ -6,20 +6,23 @@ using Terraria.DataStructures;
 
 namespace Gearstorm.Content.Items.Parts
 {
-    public class BasicBladeItem : ModItem, IHasBeybladeStats
+    public class BasicBladeItem : ModItem, BeybladeStats.IHasBeybladeStats
     {
         public override string Texture => "Gearstorm/Assets/Items/Parts/Blade_Default";
 
-        public BeybladeStats Stats => new BeybladeStats(
-            damageBase: 10f,
-            knockbackPower: 0.4f,  
-            knockbackResistance: 1f, 
-            radius: 0.5f,
-            baseSpinSpeed: 1.2f, 
-            spinDecay: 0.010f
-        );
+// No seu BasicBladeItem.cs
+        public BeybladeStats Stats => new BeybladeStats
+        {
+            DamageBase = 10f,
+            KnockbackPower = 0.4f,
+            KnockbackResistance = 1f,
+            Radius = 0.5f,
+            BaseSpinSpeed = 1.2f, // Atribuição explícita pelo nome da variável
+            SpinDecay = 0.010f
+            // Height fica como 0f automaticamente se não declarado
+        };
 
-        public BeybladePartType PartType => BeybladePartType.Blade;
+        public BeybladeStats.BeybladePartType PartType => BeybladeStats.BeybladePartType.Blade;
 
 
         public override void SetDefaults()

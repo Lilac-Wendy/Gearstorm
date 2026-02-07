@@ -16,7 +16,7 @@ namespace Gearstorm.Content.Projectiles.Beyblades
     public abstract class BaseBeybladeProjectile : ModProjectile
     {
         #region Variables
-
+        public bool LastHitWasCrit;
         public float currentSpinSpeed;
         protected float spinSpeed = 1f;
         protected bool onGround;
@@ -614,81 +614,227 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
 
         #region Combat
 
+#region Combat
+
+#region Combat
+
 private void ApplyContinuousDamage()
+{
+    // ================== CALCULA INTERVALO DE HITS ==================
+    float aps = spinSpeed * 0.25f;
+    int hitDelay = (int)MathHelper.Clamp(60f / Math.Max(aps, 0.1f), 3, 60);
+    
+    hitRateTimer++;
+
+    if (hitRateTimer < hitDelay)
+        return;
+
+    hitRateTimer = 0;
+    float radius = Projectile.width * 0.5f;
+
+    // ================== VERIFICA TODOS OS NPCs ==================
+    for (int i = 0; i < Main.maxNPCs; i++)
+    {
+        NPC npc = Main.npc[i];
+
+        // Filtros básicos
+        if (!npc.active || npc.friendly || npc.dontTakeDamage || npc.immune[Projectile.owner] > 0)
+            continue;
+
+        // Distância
+        if (Vector2.DistanceSquared(Projectile.Center, npc.Center) > (radius + 24f) * (radius + 24f))
+            continue;
+
+        // ================== SISTEMA CRÍTICO ==================
+        int baseDamage = Projectile.damage;
+        bool isCrit = false;
+        float critMultiplier = 1f; // Multiplicador final
+
+        // 1. Chance crítica base
+        float totalCritChance = stats.CritChance;
+        
+        // 2. Bônus por velocidade de rotação (opcional)
+        totalCritChance += spinSpeed * 5f;
+        
+        // 3. Sistema de OVERFLOW crítico
+        float overflowBonus = 0f;
+        
+        if (totalCritChance >= 100f)
         {
-            // 1. Acumula o DPS no "balde"
-            float dps = Projectile.damage * SpinToDpsFactor * spinSpeed;
-            dpsAccumulator += dps / 60f;
+            // Garante crítico
+            isCrit = true;
             
-            // 2. CALCULA O RITMO DOS HITS (A Mágica)
-            // Quanto maior o SpinSpeed, menor o intervalo.
-            // Exemplo: 
-            // Spin 1.0 -> delay 15 frames (4 hits/s)
-            // Spin 2.0 -> delay 7 frames (8 hits/s)
-            // Spin 5.0 -> delay 3 frames (20 hits/s)
-            int currentDelay = (int)(15f / Math.Max(spinSpeed, 0.1f));
-
-            // TRAVA DE SEGURANÇA:
-            // Não deixamos bater mais rápido que a cada 3 frames.
-
-            if (currentDelay < 3) currentDelay = 3;
-
-            hitRateTimer++;
-
-            // Se ainda não chegou a hora de bater, espera acumular mais força
-            if (hitRateTimer < currentDelay) 
-                return;
-
-            // Hora do Show!
-            hitRateTimer = 0;
-
-            // Se mesmo acumulando, não deu nem 1 de dano, aborta (spin muito baixo ou acabou a energia)
-            if (dpsAccumulator < 1f) return;
-
-            int damageThisHit = (int)dpsAccumulator;
-            dpsAccumulator = 0f; // Esvazia o balde
-
-            float radius = Projectile.width * 0.5f;
-
-            foreach (NPC npc in Main.npc)
+            // Calcula overflow (ex: 150% -> overflow de 0.5)
+            float overflow = (totalCritChance - 100f) / 100f;
+            
+            // Converte overflow em multiplicador extra
+            // Cada 100% overflow adiciona 0.5 ao multiplicador
+            overflowBonus = overflow * 0.5f;
+            
+            // Multiplicador final = base + overflow
+            critMultiplier = stats.CritMultiplier + overflowBonus;
+            
+            // DEBUG: Mostra overflow
+            #if DEBUG
+            Main.NewText($"OVERFLOW: {overflow:F2} (+{overflowBonus:F2}x)", Color.Orange);
+            #endif
+        }
+        else if (totalCritChance > 0f)
+        {
+            // Chance normal
+            isCrit = Main.rand.NextFloat(100f) < totalCritChance;
+            
+            if (isCrit)
             {
-                if (!npc.active || npc.friendly) continue;
-                
-                // Checagem de distância otimizada (Squared evita raiz quadrada)
-                if (Vector2.DistanceSquared(Projectile.Center, npc.Center) > radius * radius) continue;
-
-                // Aplica o dano acumulado
-                npc.StrikeNPC(new NPC.HitInfo
-                {
-                    Damage = damageThisHit,
-                    Knockback = stats.KnockbackPower * 0.5f,
-                    HitDirection = Math.Sign(npc.Center.X - Projectile.Center.X)
-                });
-                
-                // Visual e Som
-                // Reduzimos a quantidade de partículas se estiver batendo muito rápido para não lagar
-                if (currentDelay > 5 || Main.rand.NextBool(3)) 
-                {
-                    Dust.NewDustPerfect(npc.Center, DustID.Blood, 
-                        Vector2.Normalize(npc.Center - Projectile.Center) * 2f, 
-                        80, AugmentColor == Color.Transparent ? Color.Red : AugmentColor, 0.8f);
-                }
-
-                // O som muda o pitch conforme a velocidade
-                // Somente toca som se não estiver spamando rápido demais (para não estourar o ouvido)
-                if (currentDelay > 8 || Main.rand.NextBool(3)) 
-                {
-                    SoundEngine.PlaySound(
-                        SoundID.NPCHit4 with { 
-                            Volume = 0.4f, 
-                            Pitch = MathHelper.Clamp(spinSpeed * 0.15f, -0.6f, 0.6f),
-                            MaxInstances = 3
-                        },
-                        npc.Center
-                    );
-                }
+                critMultiplier = stats.CritMultiplier;
             }
         }
+
+        // ================== CALCULA DANO FINAL ==================
+        int finalDamage = baseDamage;
+        
+        if (isCrit)
+        {
+            // Aplica multiplicador crítico
+            finalDamage = (int)(baseDamage * critMultiplier);
+            
+            // Bônus adicional por rotação muito alta
+            if (spinSpeed > 6f)
+            {
+                float speedBonus = 1f + (spinSpeed - 6f) * 0.15f;
+                finalDamage = (int)(finalDamage * speedBonus);
+            }
+            
+            // DEBUG
+            #if DEBUG
+            Main.NewText($"CRÍTICO! {critMultiplier:F2}x = {finalDamage} dano", Color.Yellow);
+            #endif
+        }
+
+        // ================== APLICA O DANO ==================
+        // Cria HitInfo com a flag de crítico correta
+        NPC.HitInfo hitInfo = new NPC.HitInfo
+        {
+            Damage = finalDamage,
+            Knockback = Projectile.knockBack * 0.5f,
+            HitDirection = Math.Sign(npc.Center.X - Projectile.Center.X),
+            Crit = isCrit, // FLAG MAIS IMPORTANTE!
+            DamageType = Projectile.DamageType
+        };
+
+        // Aplica o dano
+        int damageDealt = npc.StrikeNPC(hitInfo);
+        
+        // Cooldown de imunidade
+        npc.immune[Projectile.owner] = hitDelay;
+
+        // ================== EFEITOS VISUAIS ==================
+        if (isCrit)
+        {
+            // Partículas de crítico
+            PerformCritEffects(npc, critMultiplier);
+            
+            // Som de crítico
+            SoundEngine.PlaySound(
+                SoundID.Item74 with 
+                { 
+                    Volume = 0.6f + (overflowBonus * 0.2f),
+                    Pitch = 0.3f + (overflowBonus * 0.1f),
+                    PitchVariance = 0.1f
+                },
+                npc.Center
+            );
+            
+            // Texto de dano (apenas visual)
+            if (Main.netMode != NetmodeID.Server)
+            {
+                CombatText.NewText(
+                    npc.getRect(),
+                    Color.Yellow,
+                    damageDealt.ToString(),
+                    true,
+                    true
+                );
+            }
+        }
+        else
+        {
+            // Efeito normal
+            if (Main.rand.NextBool(3))
+            {
+                Dust.NewDustPerfect(
+                    npc.Center,
+                    DustID.Blood,
+                    Vector2.Normalize(npc.Center - Projectile.Center) * 2f,
+                    80,
+                    AugmentColor == Color.Transparent ? Color.Red : AugmentColor,
+                    0.8f
+                );
+            }
+            
+            SoundEngine.PlaySound(
+                SoundID.NPCHit4 with
+                {
+                    Volume = 0.4f,
+                    Pitch = MathHelper.Clamp(spinSpeed * 0.15f, -0.6f, 0.6f),
+                    MaxInstances = 3
+                },
+                npc.Center
+            );
+        }
+
+        // ================== FÍSICA DO IMPACTO ==================
+        // Chama OnHitNPC para aplicar knockback e física
+        OnHitNPC(npc, hitInfo, damageDealt);
+    }
+}
+
+private void PerformCritEffects(NPC npc, float multiplier)
+{
+    // Cor baseada na força do crítico
+    Color critColor = Color.Yellow;
+    if (multiplier > 2.5f)
+        critColor = Color.Orange;
+    if (multiplier > 3f)
+        critColor = Color.Red;
+    
+    // Mistura com cor do augment
+    if (AugmentColor != Color.Transparent)
+        critColor = Color.Lerp(critColor, AugmentColor, 0.3f);
+    
+    // Partículas
+    int particleCount = (int)(10 * multiplier);
+    particleCount = Math.Min(particleCount, 30); // Limite para performance
+    
+    for (int i = 0; i < particleCount; i++)
+    {
+        Vector2 velocity = new Vector2(
+            Main.rand.NextFloat(-5f, 5f) * multiplier,
+            Main.rand.NextFloat(-5f, 0f) * multiplier
+        );
+        
+        Dust d = Dust.NewDustDirect(
+            npc.position,
+            npc.width,
+            npc.height,
+            DustID.GoldFlame,
+            velocity.X,
+            velocity.Y,
+            100,
+            critColor,
+            1.5f + (multiplier * 0.2f)
+        );
+        d.noGravity = true;
+        d.velocity *= 1.5f;
+    }
+    
+    // Flash de luz (opcional)
+    Lighting.AddLight(npc.Center, critColor.ToVector3() * multiplier * 0.5f);
+}
+
+#endregion
+
+#endregion
 
         #endregion
     }

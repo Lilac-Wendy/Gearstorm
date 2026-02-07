@@ -2,9 +2,6 @@
 
 namespace Gearstorm.Content.Data
 {
-    // ==========================================
-    // 1. A ESTRUTURA DE DADOS (BeybladeStats)
-    // ==========================================
     public struct BeybladeStats
     {
         public float DamageBase;
@@ -12,11 +9,10 @@ namespace Gearstorm.Content.Data
         public float KnockbackResistance;
         public float Radius;
         public float Height;
-
-        // 🔥 IMPORTANTE
-        public float BaseSpinSpeed;   // stat puro (UI / balance)
+        public float BaseSpinSpeed;
         public float SpinDecay;
-
+        public float CritChance { get; set; } = 0f;
+        public float CritMultiplier { get; set; } = 2f;
         public float Mass;
         public float Balance;
         public float Density;
@@ -37,111 +33,77 @@ namespace Gearstorm.Content.Data
             float density = 0f,
             float tipFriction = 0f,
             float moveSpeed = 0f,
-            float momentOfInertia = 0f)
+            float momentOfInertia = 0f,
+            float critChance = 0f, // ADICIONE ESTE
+            float critMultiplier = 2f) // E ESTE
         {
             DamageBase = damageBase;
             KnockbackPower = knockbackPower;
             KnockbackResistance = knockbackResistance;
             Radius = radius;
             Height = height;
-
             BaseSpinSpeed = baseSpinSpeed;
             SpinDecay = spinDecay;
-
             Mass = mass;
             Balance = balance;
             Density = density;
             TipFriction = tipFriction;
             MoveSpeed = moveSpeed;
             MomentOfInertia = momentOfInertia;
+            CritChance = critChance; // INICIALIZE
+            CritMultiplier = critMultiplier; // INICIALIZE
         }
-    }
 
+        public enum BeybladePartType
+        {
+            Base,
+            Blade,
+            Top
+        }
 
-    // ==========================================
-    // 2. O ENUM (Tipos de Peças)
-    // ==========================================
-    public enum BeybladePartType
-    {
-        Base,
-        Blade,
-        Top
-    }
+        public interface IHasBeybladeStats
+        {
+            BeybladeStats Stats { get; }
+            BeybladePartType PartType { get; }
+        }
 
-    // ==========================================
-    // 3. A INTERFACE QUE ESTAVA FALTANDO
-    // ==========================================
-    // Todo item que for uma peça de Beyblade PRECISA implementar isso.
-    public interface IHasBeybladeStats
-    {
-        BeybladeStats Stats { get; }
-        BeybladePartType PartType { get; }
-    }
-
-    // ==========================================
-    // 4. O COMBINADOR (Lógica Matemática)
-    // ==========================================
-    public static class BeybladeCombiner
-    {
         public static BeybladeStats CombineStats(
             IHasBeybladeStats basePart,
             IHasBeybladeStats bladePart,
             IHasBeybladeStats topPart)
         {
-            var baseStats = basePart.Stats;
-            var bladeStats = bladePart.Stats;
-            var topStats = topPart.Stats;
-            float finalBaseSpinSpeed =
-                baseStats.BaseSpinSpeed +
-                bladeStats.BaseSpinSpeed;
+            var b = basePart.Stats;
+            var l = bladePart.Stats;
+            var t = topPart.Stats;
 
-            float balancedSpin =
-                finalBaseSpinSpeed * topStats.Balance;
+            float finalBaseSpin = (b.BaseSpinSpeed + l.BaseSpinSpeed) * t.Balance;
 
-            // Massa total
-            float totalMass =
-                baseStats.Mass +
-                bladeStats.Mass +
-                topStats.Mass;
+            float totalMass = b.Mass + l.Mass + t.Mass;
+            float finalRadius = MathF.Max(b.Radius, MathF.Max(l.Radius, t.Radius));
 
-            // Dano: lâmina é a fonte principal
-            float finalDamage =
-                bladeStats.DamageBase +
-                topStats.DamageBase * 0.2f;
+            // CALCULA CHANCE CRÍTICA: Blade fornece base, Top melhora
+            float critChance = l.CritChance * (1f + t.Balance * 0.5f);
 
-            // Spin: SOMENTE A BASE, modulada pelo BALANCE do topo
-            float combinedBaseSpin =
-                baseStats.BaseSpinSpeed * topStats.Balance;
-
-            // Raio: maior peça
-            float finalRadius = MathF.Max(
-                baseStats.Radius,
-                MathF.Max(bladeStats.Radius, topStats.Radius)
-            );
-
-            // Inércia: massa × raio (modelo simples e honesto)
-            float momentOfInertia =
-                totalMass * finalRadius;
+            // CALCULA MULTIPLICADOR: Base fornece base, Blade e Top melhoram
+            float critMultiplier = 2f + (t.CritMultiplier - 2f) * 0.3f;
 
             return new BeybladeStats(
-                damageBase: finalDamage,
-                knockbackPower: bladeStats.KnockbackPower + (totalMass * 0.5f),
-                knockbackResistance: baseStats.KnockbackResistance + topStats.KnockbackResistance + (totalMass * 0.2f),
+                damageBase: l.DamageBase + (t.DamageBase * 0.2f),
+                knockbackPower: l.KnockbackPower + (totalMass * 0.5f),
+                knockbackResistance: b.KnockbackResistance + t.KnockbackResistance + (totalMass * 0.2f),
                 radius: finalRadius,
-                height: baseStats.Height + topStats.Height,
-
-                baseSpinSpeed: balancedSpin, // 🔥 AGORA EXISTE
-
-                spinDecay: bladeStats.SpinDecay * topStats.Balance,
+                height: b.Height + t.Height,
+                baseSpinSpeed: finalBaseSpin,
+                spinDecay: l.SpinDecay * (1.1f - t.Balance),
                 mass: totalMass,
-                balance: topStats.Balance,
-                density: (baseStats.Density + bladeStats.Density + topStats.Density) / 3f,
-                tipFriction: baseStats.TipFriction,
-                moveSpeed: baseStats.MoveSpeed,
-                momentOfInertia: totalMass * finalRadius
+                balance: t.Balance,
+                density: (b.Density + l.Density + t.Density) / 3f,
+                tipFriction: b.TipFriction,
+                moveSpeed: b.MoveSpeed,
+                momentOfInertia: totalMass * finalRadius,
+                critChance: critChance, // ADICIONADO
+                critMultiplier: critMultiplier // ADICIONADO
             );
-
         }
     }
-
 }
