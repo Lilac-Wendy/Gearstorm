@@ -23,35 +23,95 @@ public class ChlorophyteAugment : BeybladeAugment
         spriteBatch.Draw(texture, position, null, Color.LimeGreen * 0.8f, 0f, origin, scale, SpriteEffects.None, 0f);
     }
 
-    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNPC)
+public override void OnBeybladeHit(
+    Projectile beyblade,
+    Vector2 hitNormal,
+    float impactStrength,
+    Projectile otherBeyblade,
+    NPC targetNpc,
+    bool wasCrit
+)
+{
+    // Chamada correta da base (assinatura NOVA)
+    base.OnBeybladeHit(
+        beyblade,
+        hitNormal,
+        impactStrength,
+        otherBeyblade,
+        targetNpc,
+        wasCrit
+    );
+
+    // Segurança
+    if (targetNpc == null)
+        return;
+
+    if (beyblade.ModProjectile is not BaseBeybladeProjectile bb)
+        return;
+
+    Player player = Main.player[beyblade.owner];
+
+    // ==============================
+    // CONDIÇÃO DE ATIVAÇÃO
+    // ==============================
+    // Este Augment:
+    // - Só ativa em críticos
+    // - E ainda tem 25% de chance
+    if (!wasCrit || !Main.rand.NextBool(4))
+        return;
+
+    // ==============================
+    // EFEITO OFENSIVO (SPORE CLOUD)
+    // ==============================
+    int sporeDamage = (int)(beyblade.damage * 0.5f);
+
+    Projectile.NewProjectile(
+        beyblade.GetSource_FromThis(),
+        targetNpc.Center,
+        Vector2.Zero,
+        ProjectileID.SporeCloud,
+        sporeDamage,
+        1f,
+        beyblade.owner
+    );
+
+    // ==============================
+    // ROUBO DE VIDA (LIFESTEAL)
+    // ==============================
+    int healAmount = (int)(beyblade.damage * 0.50f);
+
+    if (healAmount <= 0)
+        return;
+
+    if (player.statLife < player.statLifeMax2)
     {
-        base.OnBeybladeHit(beyblade, hitNormal, impactStrength, otherBeyblade, targetNPC);
+        player.statLife += healAmount;
+        if (player.statLife > player.statLifeMax2)
+            player.statLife = player.statLifeMax2;
 
-        if (targetNPC != null && Main.rand.NextBool(4)) // 25% de chance de ativar o roubo de vida
+        player.HealEffect(healAmount);
+
+        // ==============================
+        // FEEDBACK VISUAL
+        // ==============================
+        for (int i = 0; i < 6; i++)
         {
-            Projectile.NewProjectile(beyblade.GetSource_FromThis(), targetNPC.Center, Vector2.Zero, ProjectileID.SporeCloud, (int)(beyblade.damage * 0.5f), 1f, beyblade.owner);
-            
-            Player player = Main.player[beyblade.owner];
-            
-
-            int healAmount = (int)(beyblade.damage * 0.50f);
-
-            if (player.statLife < player.statLifeMax2)
-            {
-                // Aplica a cura e o efeito visual (números verdes)
-                player.statLife += healAmount;
-                if (player.statLife > player.statLifeMax2) player.statLife = player.statLifeMax2;
-                player.HealEffect(healAmount);
-                
-                // Feedback visual de Chlorophyte (poeira verde subindo ao player)
-                for (int i = 0; i < 5; i++)
-                {
-                    Dust d = Dust.NewDustDirect(player.position, player.width, player.height, DustID.ChlorophyteWeapon, 0, -2f);
-                    d.noGravity = true;
-                }
-            }
+            Dust d = Dust.NewDustDirect(
+                player.position,
+                player.width,
+                player.height,
+                DustID.ChlorophyteWeapon,
+                Main.rand.NextFloat(-1f, 1f),
+                Main.rand.NextFloat(-2.5f, -0.5f),
+                150,
+                default,
+                1.1f
+            );
+            d.noGravity = true;
         }
     }
+}
+
 
     public override void AddRecipes()
     {

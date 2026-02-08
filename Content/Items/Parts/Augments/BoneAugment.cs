@@ -46,9 +46,9 @@ public class BoneAugment : BeybladeAugment
         spriteBatch.Draw(texture, position, null, Color.AntiqueWhite * 0.8f, 0f, origin, scale, SpriteEffects.None, 0f);
     }
     
-public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNPC)
+    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNpc, bool wasCrit)
 {
-    if (targetNPC == null) return;
+    if (targetNpc == null) return;
 
     Player player = Main.player[beyblade.owner];
     float magicBonus = player.GetTotalDamage(DamageClass.Magic).Additive;
@@ -76,8 +76,8 @@ public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float
         // Dano escalonado pelo starScaling (0.5 ou 0.8)
         int starDamage = (int)((beyblade.damage * starScaling) + (player.GetTotalDamage(DamageClass.Magic).ApplyTo(beyblade.damage) * starScaling));
 
-        Vector2 spawnPos = targetNPC.Center + new Vector2(Main.rand.Next(-100, 101), -600);
-        Vector2 starSpeed = (targetNPC.Center - spawnPos).SafeNormalize(Vector2.UnitY) * 18f; // Mais rápidas
+        Vector2 spawnPos = targetNpc.Center + new Vector2(Main.rand.Next(-100, 101), -600);
+        Vector2 starSpeed = (targetNpc.Center - spawnPos).SafeNormalize(Vector2.UnitY) * 18f; // Mais rápidas
 
         int sIndex = Projectile.NewProjectile(beyblade.GetSource_FromThis(), spawnPos, starSpeed, ProjectileID.Starfury, starDamage, 2f, beyblade.owner);
         if (sIndex != Main.maxProjectiles)

@@ -35,27 +35,30 @@ public abstract class BeybladeAugment : ModItem
 
     public virtual void OnBeybladeHit(
         Projectile beyblade,
-        Vector2 hitNormal,
+        Vector2 normal,
         float impactStrength,
-        Projectile otherBeyblade,
-        NPC targetNPC
+        Projectile otherProj,
+        NPC targetNpc,
+        bool wasCrit
     )
     {
-        if (targetNPC != null)
+        if (targetNpc != null)
         {
             if (beyblade.ModProjectile is BaseBeybladeProjectile bb)
             {
-                ApplyAugmentEffect(bb, targetNPC);
+                ApplyAugmentEffect(bb, targetNpc, wasCrit);
             }
         }
     }
 
     public virtual void ApplyAugmentEffect(
         BaseBeybladeProjectile beybladeProj,
-        NPC target
+        NPC target,
+        bool wasCrit
     )
     {
     }
+
 
     public override void ModifyTooltips(List<TooltipLine> tooltips)
     {

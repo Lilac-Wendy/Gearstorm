@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Collections.Generic;
 using Gearstorm.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -10,7 +9,6 @@ using Terraria.DataStructures;
 
 using Gearstorm.Content.Data;
 using Gearstorm.Content.Projectiles.Beyblades;
-using Gearstorm.Content.Items.Parts;
 
 namespace Gearstorm.Content.Items.Beyblades
 {

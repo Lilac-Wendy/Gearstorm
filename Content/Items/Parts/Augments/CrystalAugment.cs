@@ -1,5 +1,4 @@
-﻿using Gearstorm.Content.Projectiles.Beyblades;
-using Terraria;
+﻿using Terraria;
 using Terraria.ID;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -24,9 +23,9 @@ public class CrystalAugment : BeybladeAugment
         spriteBatch.Draw(texture, position, null, Color.Pink * 0.8f, 0f, origin, scale, SpriteEffects.None, 0f);
     }
 
-    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNPC)
+    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNpc, bool wasCrit)
     {
-        if (targetNPC != null || impactStrength > 1.5f)
+        if (targetNpc != null || impactStrength > 1.5f)
         {
             for (int i = 0; i < 4; i++)
             {

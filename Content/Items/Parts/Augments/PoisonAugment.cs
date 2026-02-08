@@ -20,7 +20,7 @@ public class PoisonAugment : BeybladeAugment
 
     public override Color AugmentColor => Color.MediumVioletRed;
 
-    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
+    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
     {
         target.AddBuff(BuffID.Poisoned, 300);
 

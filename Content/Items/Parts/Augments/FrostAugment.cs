@@ -18,7 +18,7 @@ public class FrostAugment : BeybladeAugment
         "Hitting an already frozen foe [c/ADD8E6:shatters] the ice for [c/00FFFF:30% bonus critical damage and slow them down]\n"; 
 
 
-    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
+    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
     {
         int debuffType = Main.hardMode ? BuffID.Frostburn2 : BuffID.Frostburn;
 

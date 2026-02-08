@@ -29,7 +29,7 @@ public class FireAugment : BeybladeAugment
         Color glowColor = Color.OrangeRed * 0.8f;
         spriteBatch.Draw(texture, position, null, glowColor, 0f, origin, scale, SpriteEffects.None, 0f);
     }
-    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
+    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
     {
         int debuffType = Main.hardMode ? BuffID.OnFire3 : BuffID.OnFire;
         target.AddBuff(debuffType, 240);

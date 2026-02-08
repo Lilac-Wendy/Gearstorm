@@ -7,7 +7,7 @@
 
             public override StatInheritanceData GetModifierInheritance(DamageClass damageClass)
             {
-                if (damageClass == DamageClass.Melee)
+                if (damageClass == Melee)
                     return StatInheritanceData.Full;
 
                 return new StatInheritanceData(

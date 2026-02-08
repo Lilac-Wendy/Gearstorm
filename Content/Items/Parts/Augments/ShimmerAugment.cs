@@ -19,7 +19,7 @@ public class ShimmerAugment : BeybladeAugment
         "'The ceiling is just another floor you haven't stood on yet.'";
 
 
-    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
+    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
         {
             
             for (int i = 0; i < 60; i++) 

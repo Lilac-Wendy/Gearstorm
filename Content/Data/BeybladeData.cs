@@ -35,7 +35,7 @@ namespace Gearstorm.Content.Data
             float moveSpeed = 0f,
             float momentOfInertia = 0f,
             float critChance = 0f, 
-            float critMultiplier = 2f) // E ESTE
+            float critMultiplier = 2f) 
         {
             DamageBase = damageBase;
             KnockbackPower = knockbackPower;
@@ -104,7 +104,7 @@ public static BeybladeStats CombineStats(
 
     float spin = l.BaseSpinSpeed;
 
-// Crit chance: 20% por 1.0 Spin
+// Crit chance: 20% per 1.0 Spin. Base chance of critical hits. Effectiveness decreases as Spin Speed decays.
     float rawCritChance = spin * 0.20f;
 
 // Cap em 100%

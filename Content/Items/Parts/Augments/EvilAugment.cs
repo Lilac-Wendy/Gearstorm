@@ -18,7 +18,7 @@ namespace Gearstorm.Content.Items.Parts.Augments
             (Main.hardMode ? "[c/FFD700:Hardmode Bonus:] Hits reduce enemy damage and knockback resistance." : "") + "\n" +
             "'An unholy thirst that fuels the spin.'";
 
-        public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
+        public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
         {
             // Lógica de Cura de Tempo de Vida (Stamina)
             int lifeSteal = (int)(beybladeProj.Projectile.damage * 0.20f);

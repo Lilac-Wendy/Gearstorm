@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Gearstorm.Content.Items.Beyblades;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Terraria;
 using Terraria.ModLoader;
 
@@ -63,9 +64,9 @@ namespace Gearstorm.Content.Data
 
             if (launcher.BeybladeParts != null && launcher.BeybladeParts.Length >= 3)
             {
-                Item topItem   = launcher.BeybladeParts[0];
+                Item topItem = launcher.BeybladeParts[0];
                 Item bladeItem = launcher.BeybladeParts[1];
-                Item baseItem  = launcher.BeybladeParts[2];
+                Item baseItem = launcher.BeybladeParts[2];
 
                 if (!topItem.IsAir && !bladeItem.IsAir && !baseItem.IsAir &&
                     topItem.ModItem is BeybladeStats.IHasBeybladeStats top &&
@@ -91,63 +92,109 @@ namespace Gearstorm.Content.Data
 
             BeybladeStats s = stats.Value;
 
-    // ==============================
-    // CORES PADRÃO
-    // ==============================
-    Color HEADER   = Color.Gold;
-    Color PRIMARY = Color.OrangeRed;   // ofensivo
-    Color SECOND  = Color.Cyan;        // ritmo / spin
-    Color TERT    = Color.LightGray;   // físico / controle
+            // ==============================
+            // CORES PADRÃO
+            // ==============================
+            Color header = Color.Gold;
+            Color primary = Color.OrangeRed; // ofensivo
+            Color second = Color.Cyan; // ritmo / spin
+            Color tert = Color.LightGray; // físico / controle
 
-    tooltips.Add(new TooltipLine(Mod, "BeyHeader", "--- BEYBLADE STATS ---")
-    {
-        OverrideColor = HEADER
-    });
+            tooltips.Add(new TooltipLine(Mod, "BeyHeader", "--- BEYBLADE STATS ---")
+            {
+                OverrideColor = header
+            });
 
-    Add(tooltips, "Base Damage", s.DamageBase, PRIMARY);
-    Add(tooltips, "Impact Power", s.KnockbackPower, PRIMARY);
+            bool showAdvanced =
+                Main.keyState.IsKeyDown(Keys.LeftShift) ||
+                Main.keyState.IsKeyDown(Keys.RightShift);
 
-// Critical Chance (Spin × 20%)
-    float critChance = MathF.Min(100f, s.BaseSpinSpeed * 20f);
-    tooltips.Add(new TooltipLine(
-        Mod,
-        "BeyCritChance",
-        $"Critical Chance: {critChance:F0}%"
-    )
-    {
-        OverrideColor = PRIMARY
-    });
+// ==============================
+// COMBAT OUTPUT (ALWAYS VISIBLE)
+// ==============================
+            Add(tooltips, "Base Damage", s.DamageBase, primary);
+            Add(tooltips, "Knockback", s.KnockbackPower, primary);
 
-// Critical Multiplier (Over-Spin)
-    tooltips.Add(new TooltipLine(
-        Mod,
-        "BeyCritMult",
-        $"Critical Multiplier: ×{s.CritMultiplier:F2}"
-    )
-    {
-        OverrideColor = PRIMARY
-    });
+// ==============================
+// CRITICAL SYSTEM (Spin-based, legacy compatible)
+// ==============================
 
-// SPIN / FLOW
-    Add(tooltips, "Spin Speed", s.BaseSpinSpeed, SECOND);
-    Add(tooltips, "Spin Decay", s.SpinDecay, SECOND);
-    Add(tooltips, "Move Speed", s.MoveSpeed, SECOND);
+// Spin base da build
+            float effectiveSpin = s.BaseSpinSpeed * s.Balance;
 
-    // ==============================
-    // PHYSICS / CONTROL
-    // ==============================
-    Add(tooltips, "Mass", s.Mass, TERT);
-    Add(tooltips, "Density", s.Density, TERT);
-    Add(tooltips, "Moment of Inertia", s.MomentOfInertia, TERT);
+// Crit chance máximo (0–100%) derivado da build
+            float critChance = MathF.Min(100f, effectiveSpin * 20f);
 
-    Add(tooltips, "Radius", s.Radius, TERT);
-    Add(tooltips, "Height", s.Height, TERT);
+            tooltips.Add(new TooltipLine(
+                Mod,
+                "BeyCritChance",
+                $"Critical Chance: {critChance:F0}%"
+            )
+            {
+                OverrideColor = primary
+            });
 
-    Add(tooltips, "Balance", s.Balance, TERT);
-    Add(tooltips, "Tip Friction", s.TipFriction, TERT);
-    Add(tooltips, "Knockback Resistance", s.KnockbackResistance, TERT);
+            tooltips.Add(new TooltipLine(
+                Mod,
+                "BeyCritMult",
+                $"Critical Multiplier: ×{s.CritMultiplier:F2}"
+            )
+            {
+                OverrideColor = primary
+            });
 
-}
+// ==============================
+// CORE SPIN (Always visible)
+// ==============================
+            Add(tooltips, "Effective Spin Speed", effectiveSpin, second);
+
+// ==============================
+// ADVANCED STATS (SHIFT)
+// ==============================
+            if (!showAdvanced)
+            {
+                tooltips.Add(new TooltipLine(
+                    Mod,
+                    "BeyHint",
+                    "[Hold SHIFT for advanced physics stats]"
+                )
+                {
+                    OverrideColor = Color.Gray
+                });
+
+                return;
+            }
+
+// ---- ADVANCED HEADER ----
+            tooltips.Add(new TooltipLine(
+                Mod,
+                "BeyAdvancedHeader",
+                "--- ADVANCED PHYSICS ---"
+            )
+            {
+                OverrideColor = Color.LightGray
+            });
+
+// ==============================
+// SPIN / FLOW (Advanced)
+// ==============================
+            Add(tooltips, "Spin Decay Rate", s.SpinDecay, second);
+            Add(tooltips, "Move Speed", s.MoveSpeed, second);
+
+// ==============================
+// PHYSICS / CONTROL (Advanced)
+// ==============================
+            Add(tooltips, "Mass", s.Mass, tert);
+            Add(tooltips, "Density", s.Density, tert);
+            Add(tooltips, "Moment of Inertia", s.MomentOfInertia, tert);
+
+            Add(tooltips, "Radius", s.Radius, tert);
+            Add(tooltips, "Height", s.Height, tert);
+
+            Add(tooltips, "Balance", s.Balance, tert);
+            Add(tooltips, "Tip Friction", s.TipFriction, tert);
+            Add(tooltips, "Knockback Resistance", s.KnockbackResistance, tert);
+        }
 
 
 

@@ -19,7 +19,11 @@ namespace Gearstorm.Content.Items.Parts.Augments
             "Pulls nearby enemies toward the Beyblade.\n" +
             "'Spaghetti(fication) is the only thing I offer, but it's not on a plate.'";
 
-        public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
+        public override void ApplyAugmentEffect(
+            BaseBeybladeProjectile beybladeProj,
+            NPC target,
+            bool wasCrit
+        )
 {
     float orbitalSpawnRadius = 180f;
     float pullRange = orbitalSpawnRadius + 48f;
@@ -52,7 +56,7 @@ namespace Gearstorm.Content.Items.Parts.Augments
         distanceFactor = MathHelper.Clamp(distanceFactor, 0.15f, 1f);
 
         float suctionSpeed =
-            (18f + beybladeProj.currentSpinSpeed * 3.5f) * distanceFactor;
+            (18f + beybladeProj.CurrentSpinSpeed * 3.5f) * distanceFactor;
 
         float pullFactor =
             0.14f * npc.knockBackResist * distanceFactor;
@@ -122,7 +126,7 @@ namespace Gearstorm.Content.Items.Parts.Augments
             toCenter * inwardVelocity + tangential;
 
         Color dustColor = arm == 0 ? Color.Cyan : Color.Lime;
-        int dustID = arm == 0 ? DustID.Vortex : 61;
+        int dustId = arm == 0 ? DustID.Vortex : 61;
 
         for (int r = 0; r < 32; r++)
         {
@@ -131,7 +135,7 @@ namespace Gearstorm.Content.Items.Parts.Augments
 
             Dust d = Dust.NewDustPerfect(
                 trailPos,
-                dustID,
+                dustId,
                 finalVelocity,
                 0,
                 dustColor,
@@ -146,10 +150,10 @@ namespace Gearstorm.Content.Items.Parts.Augments
     // =========================
     // ORBITAIS — CRIT OU CONTADOR
     // =========================
-    const int HitsPerSpawn = 4;
+    const int hitsPerSpawn = 4;
 
     projectile.localAI[1]++;
-    bool spawnByHits = projectile.localAI[1] >= HitsPerSpawn;
+    bool spawnByHits = projectile.localAI[1] >= hitsPerSpawn;
     if (spawnByHits)
         projectile.localAI[1] = 0f;
 

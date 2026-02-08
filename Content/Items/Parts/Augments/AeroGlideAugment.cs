@@ -1,13 +1,10 @@
 ﻿using System;
-using Gearstorm.Content.Buffs;
-using Gearstorm.Content.Data;
 using Gearstorm.Content.Projectiles.Beyblades;
 using Terraria;
 using Terraria.ID;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria.ModLoader;
-using Gearstorm.Content.Items.Parts;
 
 namespace Gearstorm.Content.Items.Parts.Augments;
 
@@ -53,7 +50,7 @@ public class AeroGlideAugment : BeybladeAugment
         float movementBonus = (player.moveSpeed - 1f) / 0.20f;
         if (movementBonus > 0)
         {
-            p.CritChance = (int)(10 * movementBonus); 
+            beybladeProj.Stats.CritChance += 0.10f * movementBonus;
         }
         
         float targetMaxSpeed = Main.hardMode ? 35f : 18f;
@@ -69,17 +66,17 @@ public class AeroGlideAugment : BeybladeAugment
         }
     }
 
-    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
+    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
     {
         Projectile p = beybladeProj.Projectile;
 
         // 5. IMPACTO CINÉTICO (Substituindo o True Damage)
         // 30% do dano da Beyblade + Bônus por Velocidade atual.
         float kineticFactor = p.velocity.Length() * 0.02f; // Ex: 35 de speed = +70% de dano no estilhaço
-        int shatterDamage = (int)(p.damage * (0.30f + kineticFactor));
-
+        float critBonus = wasCrit ? 0.25f : 0f;
+        int shatterDamage = (int)(p.damage * (0.30f + kineticFactor + critBonus));
         // Aplica um hit secundário oficial do Terraria (Pode ser crítico e respeita defesa)
-        var hit = target.CalculateHitInfo(shatterDamage, 1, true, 0);
+        var hit = target.CalculateHitInfo(shatterDamage, 1, true);
         target.StrikeNPC(hit);
 
         // Feedback visual
@@ -90,34 +87,34 @@ public class AeroGlideAugment : BeybladeAugment
         }
     }
 
-public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNPC)
+    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNpc, bool wasCrit)
 {
 
     var beyProj = beyblade.ModProjectile as BaseBeybladeProjectile;
     if (beyProj == null)
         return;
 
-    if (targetNPC != null)
+    if (targetNpc != null)
     {
         // sempre aplica o deslocamento vertical
-        targetNPC.velocity.Y -= 2f;
+        targetNpc.velocity.Y -= 2f;
 
         // 25% de chance de inverter a direção
         if (Main.rand.NextFloat() < 0.25f)
         {
-            targetNPC.direction *= -1;
+            targetNpc.direction *= -1;
         }
     }
 
 // 1. REDUÇÃO DE MASSA (simples, previsível, configurável externamente)
-    beyProj.stats.Mass = Math.Max(0.1f, beyProj.stats.Mass - 0.4f);
+    beyProj.Stats.Mass = Math.Max(0.1f, beyProj.Stats.Mass - 0.4f);
 
 // 2. LIFT AERODINÂMICO DIRETO
     beyblade.velocity.Y -= 10f;
     beyblade.timeLeft += 10;
 
 // 3. HARDMODE SLICE 
-    if (Main.hardMode && targetNPC != null)
+    if (Main.hardMode && targetNpc != null)
     {
         Vector2 ov = beyblade.oldVelocity;
 

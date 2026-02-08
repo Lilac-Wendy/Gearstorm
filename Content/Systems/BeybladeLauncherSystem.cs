@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using Gearstorm.Content.Data;
 using Gearstorm.Content.Items.Beyblades;
-using Gearstorm.Content.Items.Parts;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.UI;
@@ -14,13 +13,13 @@ namespace Gearstorm.Content.Systems
 {
     public class BeybladeLauncherSystem : ModSystem
     {
-        private const int SLOT_SIZE = 52;
-        private const int SLOT_SPACING = 58;
+        private const int SlotSize = 52;
+        private const int SlotSpacing = 58;
         
         private bool mouseWasPressed;
 
         // Centraliza a posição para evitar que o clique e o desenho fiquem desalinhados
-        private Vector2 GetUIBasePosition()
+        private Vector2 GetUiBasePosition()
         {
             return new Vector2(
                 Main.screenWidth - 260, 
@@ -54,21 +53,21 @@ namespace Gearstorm.Content.Systems
             if (player.HeldItem?.ModItem is not BeybladeLauncherItem launcher)
                 return;
 
-            DrawSlotsUI(launcher);
+            DrawSlotsUi(launcher);
         }
 
-        private void DrawSlotsUI(BeybladeLauncherItem launcher)
+        private void DrawSlotsUi(BeybladeLauncherItem launcher)
         {
             SpriteBatch spriteBatch = Main.spriteBatch;
-            Vector2 basePosition = GetUIBasePosition();
+            Vector2 basePosition = GetUiBasePosition();
             
             Texture2D slotTexture = TextureAssets.InventoryBack.Value;
             Texture2D slotTextureHighlight = TextureAssets.InventoryBack2.Value;
 
             for (int i = 0; i < 3; i++)
             {
-                Vector2 slotPos = basePosition + new Vector2(0, i * SLOT_SPACING);
-                Rectangle slotRect = new Rectangle((int)slotPos.X, (int)slotPos.Y, SLOT_SIZE, SLOT_SIZE);
+                Vector2 slotPos = basePosition + new Vector2(0, i * SlotSpacing);
+                Rectangle slotRect = new Rectangle((int)slotPos.X, (int)slotPos.Y, SlotSize, SlotSize);
 
                 bool isHovered = slotRect.Contains(Main.MouseScreen.ToPoint());
 
@@ -88,11 +87,11 @@ namespace Gearstorm.Content.Systems
                     int frameHeight = itemTexture.Height / frameCount;
                     Rectangle sourceRect = new Rectangle(0, 0, itemTexture.Width, frameHeight);
                     
-                    float scale = Math.Min(SLOT_SIZE / (float)sourceRect.Width, SLOT_SIZE / (float)sourceRect.Height) * 0.85f;
+                    float scale = Math.Min(SlotSize / (float)sourceRect.Width, SlotSize / (float)sourceRect.Height) * 0.85f;
 
                     spriteBatch.Draw(
                         itemTexture,
-                        slotPos + new Vector2(SLOT_SIZE / 2, SLOT_SIZE / 2),
+                        slotPos + new Vector2(SlotSize / 2, SlotSize / 2),
                         sourceRect, 
                         Color.White, 
                         0f, 
@@ -152,12 +151,12 @@ namespace Gearstorm.Content.Systems
         private void ProcessSlotClickRelease(BeybladeLauncherItem launcher)
         {
             Vector2 mousePos = Main.MouseScreen;
-            Vector2 basePosition = GetUIBasePosition(); // Agora bate com a posição do desenho
+            Vector2 basePosition = GetUiBasePosition(); // Agora bate com a posição do desenho
             
             for (int i = 0; i < 3; i++)
             {
-                Vector2 slotPos = basePosition + new Vector2(0, i * SLOT_SPACING);
-                Rectangle slotRect = new Rectangle((int)slotPos.X, (int)slotPos.Y, SLOT_SIZE, SLOT_SIZE);
+                Vector2 slotPos = basePosition + new Vector2(0, i * SlotSpacing);
+                Rectangle slotRect = new Rectangle((int)slotPos.X, (int)slotPos.Y, SlotSize, SlotSize);
                 
                 if (slotRect.Contains(mousePos.ToPoint()))
                 {

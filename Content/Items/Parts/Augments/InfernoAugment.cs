@@ -1,10 +1,8 @@
-﻿using Gearstorm.Content.Projectiles.Beyblades;
-using Terraria;
+﻿using Terraria;
 using Terraria.ID;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria.ModLoader;
-using Gearstorm.Content.Items.Parts;
 using Terraria.Audio;
 
 namespace Gearstorm.Content.Items.Parts.Augments;
@@ -25,10 +23,10 @@ public class InfernoAugment : BeybladeAugment
         spriteBatch.Draw(texture, position, null, Color.DarkOrange * 0.9f, 0f, origin, scale, SpriteEffects.None, 0f);
     }
 
-    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNPC)
+    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNpc, bool wasCrit)
     {
         // Só explode se o impacto for considerável ou atingir um NPC
-        if (targetNPC != null || impactStrength > 3f)
+        if (targetNpc != null || impactStrength > 3f)
         {
             Explode(beyblade);
         }

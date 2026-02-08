@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
@@ -9,7 +8,6 @@ using Terraria.ModLoader;
 using Gearstorm.Content.DamageClasses;
 using Gearstorm.Content.Data;
 using Gearstorm.Content.Items.Parts;
-using Gearstorm.Content.Items.Parts.Augments;
 
 namespace Gearstorm.Content.Projectiles.Beyblades
 {
@@ -17,22 +15,21 @@ namespace Gearstorm.Content.Projectiles.Beyblades
     {
         #region Variables
         public bool LastHitWasCrit;
-        public float currentSpinSpeed;
-        protected float spinSpeed = 1f;
-        protected bool onGround;
-        protected int hitCooldown;
-        private float dpsAccumulator;
-        private int hitRateTimer = 0;
-        protected const int AmmoSlotStart = 54;
-        protected const int AmmoSlotEnd = 57;
-        protected virtual float CritMultiplier => 1.35f;
+        public float CurrentSpinSpeed;
+        protected float SpinSpeed = 1f;
+        protected bool OnGround;
+        protected int HitCooldown;
+        private int hitRateTimer;
+        protected const int AMMO_SLOT_START = 54;
+        protected const int AMMO_SLOT_END = 57;
+        public float CritMultiplier => Stats.CritMultiplier;
 
         protected virtual bool CanCrit(Player player, NPC target) => true;
-        protected const float SpinToDpsFactor = 4f;
-        public int shimmerFlightTimer = 0;
+        protected const float SPIN_TO_DPS_FACTOR = 4f;
+        public int ShimmerFlightTimer = 0;
         public Color AugmentColor { get; set; } = Color.Transparent;
 
-        public BeybladeStats stats;
+        public BeybladeStats Stats;
 
         #endregion
 
@@ -47,8 +44,8 @@ namespace Gearstorm.Content.Projectiles.Beyblades
         {
             // ================== HITBOX FÍSICA ==================
             // Raio vem da Blade (em tiles)
-            int diameter = (stats.Radius > 0f)
-                ? (int)(stats.Radius * 2f * 16f)
+            int diameter = (Stats.Radius > 0f)
+                ? (int)(Stats.Radius * 2f * 16f)
                 : 32;
 
             Projectile.width = diameter;
@@ -65,61 +62,52 @@ namespace Gearstorm.Content.Projectiles.Beyblades
             // ================== OFFSET VISUAL ==================
             // Height do Top influencia SOMENTE o visual
             // Tops mais altos levantam o centro visual
-            MathHelper.Clamp(stats.Height, 0f, 1f);
+            MathHelper.Clamp(Stats.Height, 0f, 1f);
 
             // Valor negativo puxa o sprite para baixo
             Projectile.gfxOffY = 0f;
 
             // ================== COMBATE ==================
-            Projectile.knockBack = stats.KnockbackPower > 0f
-                ? stats.KnockbackPower
+            Projectile.knockBack = Stats.KnockbackPower > 0f
+                ? Stats.KnockbackPower
                 : 5f;
 
             Projectile.damage = (int)(
-                stats.DamageBase *
-                (1f + stats.Mass * 0.1f) *
-                stats.Balance
+                Stats.DamageBase *
+                (1f + Stats.Mass * 0.1f) *
+                Stats.Balance
             );
 
             // ================== SPIN ==================
-            spinSpeed = stats.BaseSpinSpeed;
-            currentSpinSpeed = spinSpeed;
+            SpinSpeed = Stats.BaseSpinSpeed;
+            CurrentSpinSpeed = SpinSpeed;
 
         }
-        
-        private const int LOCAL_CRIT_FLAG = 0;
-        public override void ModifyHitNPC(
-            NPC target,
-            ref NPC.HitModifiers modifiers
-        )
+
+        public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers)
         {
-            // Garante que só Spinner usa crit custom
+            // Só Spinner usa o sistema custom
             if (Projectile.DamageType is not Spinner)
                 return;
 
-            // Segurança básica
-            if (stats.CritChance <= 0f || !CanCrit(Main.player[Projectile.owner], target))
+            Player player = Main.player[Projectile.owner];
+
+            // Crit chance BASE da build (0–1)
+            float critChance = MathHelper.Clamp(Stats.CritChance, 0f, 1f);
+
+            if (critChance <= 0f || !CanCrit(player, target))
             {
                 LastHitWasCrit = false;
                 return;
             }
 
-            float critChance = MathHelper.Clamp(stats.CritChance, 0f, 1f);
-
-            // DEBUG (pode remover depois)
-            Main.NewText(
-                $"CritChance={critChance:P0} Mult={stats.CritMultiplier}",
-                Color.Orange
-            );
-
-            // Roll de crítico CUSTOM
+            // Roll custom sem SpinEfficiency
             if (Main.rand.NextFloat() < critChance)
             {
-                // Marca como crítico real no tML
                 modifiers.SetCrit();
 
-                // Aplica multiplicador custom (pós-defesa)
-                modifiers.FinalDamage *= stats.CritMultiplier;
+                // Multiplicador custom pós-defesa
+                modifiers.FinalDamage *= Stats.CritMultiplier;
 
                 LastHitWasCrit = true;
             }
@@ -127,7 +115,14 @@ namespace Gearstorm.Content.Projectiles.Beyblades
             {
                 LastHitWasCrit = false;
             }
+
+            // DEBUG
+            Main.NewText(
+                $"CritChance={(critChance*100f):F0}% | Mult={Stats.CritMultiplier:F2}",
+                Color.Orange
+            );
         }
+
 
 
        
@@ -229,7 +224,7 @@ private Color MixAugmentColors(List<Color> colors)
 
                 List<Color> augmentColors = new();
 
-                for (int i = AmmoSlotStart; i <= AmmoSlotEnd; i++)
+                for (int i = AMMO_SLOT_START; i <= AMMO_SLOT_END; i++)
                 {
                     Item item = player.inventory[i];
                     if (!item.IsAir && item.ModItem is BeybladeAugment aug)
@@ -279,7 +274,7 @@ private Color MixAugmentColors(List<Color> colors)
             /* ================== GROUND CHECK ================== */
             float groundProbe = 1f;
 
-            onGround =
+            OnGround =
                 Projectile.velocity.Y >= 0f &&
                 Collision.SolidCollision(
                     Projectile.BottomLeft + new Vector2(0, groundProbe),
@@ -287,7 +282,7 @@ private Color MixAugmentColors(List<Color> colors)
                     2
                 );
 
-            if (onGround)
+            if (OnGround)
             {
                 // snap único, sem interpolação
                 Projectile.velocity.Y = 0f;
@@ -296,32 +291,32 @@ private Color MixAugmentColors(List<Color> colors)
 
             /* ================== SPIN DECAY ================== */
 
-            float inertia = MathHelper.Clamp(stats.MomentOfInertia * 0.01f, 0.5f, 2f);
-            if (onGround && currentSpinSpeed > 0f)
+            float inertia = MathHelper.Clamp(Stats.MomentOfInertia * 0.01f, 0.5f, 2f);
+            if (OnGround && CurrentSpinSpeed > 0f)
             {
-                currentSpinSpeed = Math.Max(currentSpinSpeed - (0.02f / inertia), 0f);
+                CurrentSpinSpeed = Math.Max(CurrentSpinSpeed - (0.02f / inertia), 0f);
             }
 
-            spinSpeed = Math.Max(currentSpinSpeed, 0.1f);
+            SpinSpeed = Math.Max(CurrentSpinSpeed, 0.1f);
 
 
             /* ================== BOUNCE (FIXED) ================== */
 
-            if (onGround && stats.Density < 0.7f && Projectile.velocity.Y > 1f)
+            if (OnGround && Stats.Density < 0.7f && Projectile.velocity.Y > 1f)
             {
                 Projectile.velocity.Y *= -0.2f;
             }
 
             /* ================== FRICTION ================== */
 
-            if (onGround)
+            if (OnGround)
             {
-                float friction = stats.TipFriction > 0 ? stats.TipFriction : 0.04f;
+                float friction = Stats.TipFriction > 0 ? Stats.TipFriction : 0.04f;
                 Projectile.velocity.X *= (1f - friction);
 
                 if (Math.Abs(Projectile.velocity.X) < 0.1f)
                     Projectile.velocity.X = 0f;
-                if (Math.Abs(Projectile.velocity.X) > 1f && spinSpeed > 0.4f && Main.rand.NextBool(4))
+                if (Math.Abs(Projectile.velocity.X) > 1f && SpinSpeed > 0.4f && Main.rand.NextBool(4))
                 {
                     Dust d = Dust.NewDustPerfect(
                         Projectile.Bottom + new Vector2(Main.rand.NextFloat(-8f, 8f), -2f),
@@ -350,7 +345,7 @@ private Color MixAugmentColors(List<Color> colors)
 
             Projectile.rotation = MathHelper.Clamp(Projectile.velocity.X * 0.05f, -0.3f, 0.3f);
 
-            if (++Projectile.frameCounter >= (int)(5 / spinSpeed))
+            if (++Projectile.frameCounter >= (int)(5 / SpinSpeed))
             {
                 Projectile.frameCounter = 0;
                 Projectile.frame = (Projectile.frame + 1) % Main.projFrames[Projectile.type];
@@ -358,11 +353,11 @@ private Color MixAugmentColors(List<Color> colors)
 
             /* ================== DAMAGE ================== */
 
-            if (spinSpeed > 0.5f)
+            if (SpinSpeed > 0.5f)
                 ApplyContinuousDamage();
 
-            if (hitCooldown > 0)
-                hitCooldown--;
+            if (HitCooldown > 0)
+                HitCooldown--;
         }
 
 
@@ -382,8 +377,8 @@ private Color MixAugmentColors(List<Color> colors)
 
         // ==== DETECÇÃO DE COLISÃO ====
         // Convertendo raio para pixels (escala 1:16 padrão Terraria)
-        float radiusA = stats.Radius * 16f;
-        float radiusB = otherBey.stats.Radius * 16f;
+        float radiusA = Stats.Radius * 16f;
+        float radiusB = otherBey.Stats.Radius * 16f;
         Vector2 delta = Projectile.Center - other.Center;
         float distance = delta.Length();
         float minDist = radiusA + radiusB;
@@ -404,12 +399,12 @@ private Color MixAugmentColors(List<Color> colors)
 
         // Coeficiente de Restituição baseado na densidade média
         // Quanto mais denso, mais o impacto é absorvido (menos "quique" seco)
-        float avgDensity = (stats.Density + otherBey.stats.Density) * 0.5f;
+        float avgDensity = (Stats.Density + otherBey.Stats.Density) * 0.5f;
         float e = MathHelper.Clamp(1.0f - avgDensity, 0.1f, 0.9f);
 
         // Massa e Inércia
-        float mA = stats.Mass;
-        float mB = otherBey.stats.Mass;
+        float mA = Stats.Mass;
+        float mB = otherBey.Stats.Mass;
 
         // Cálculo do Impulso Escalar (Fórmula de Colisão com Restituição)
         // j = -(1 + e) * v_rel / (1/mA + 1/mB)
@@ -418,15 +413,15 @@ private Color MixAugmentColors(List<Color> colors)
 
         // Modificador de Knockback (Potência de Ataque vs Resistência de Defesa)
         // Usamos a diferença de potências para escalar o impulso
-        float attackBonus = (stats.KnockbackPower + otherBey.stats.KnockbackPower) * 0.5f;
+        float attackBonus = (Stats.KnockbackPower + otherBey.Stats.KnockbackPower) * 0.5f;
         float impulseMag = j * attackBonus;
 
         Vector2 impulseVec = impulseMag * normal;
 
         // ==== APLICAÇÃO DE VELOCIDADE ====
         // A resistência reduz a aceleração final de forma inversamente proporcional (a = F / m * resist)
-        float resA = 1f / (1f + stats.KnockbackResistance);
-        float resB = 1f / (1f + otherBey.stats.KnockbackResistance);
+        float resA = 1f / (1f + Stats.KnockbackResistance);
+        float resB = 1f / (1f + otherBey.Stats.KnockbackResistance);
 
         Projectile.velocity += (impulseVec / mA) * resA;
         other.velocity -= (impulseVec / mB) * resB;
@@ -451,19 +446,19 @@ private void HandleImpact(
     Vector2 normal,
     float impactStrength,
     Projectile otherProj = null,
-    NPC targetNPC = null
+    NPC targetNpc = null
 )
 {
     if (normal == Vector2.Zero) normal = -Vector2.UnitY;
 
     // Normalização da força de impacto baseada na inércia do objeto
     // Impactos mais fortes em objetos com pouca inércia causam mais perda de spin
-    float effectiveImpact = impactStrength / (1f + stats.Density);
+    float effectiveImpact = impactStrength / (1f + Stats.Density);
     
     // ==== PERDA DE SPIN (ENERGIA CINÉTICA) ====
     // O SpinDecay atua como um multiplicador de eficiência
-    float spinLoss = (effectiveImpact / stats.MomentOfInertia) * stats.SpinDecay;
-    currentSpinSpeed = Math.Max(currentSpinSpeed - spinLoss, 0f);
+    float spinLoss = (effectiveImpact / Stats.MomentOfInertia) * Stats.SpinDecay;
+    CurrentSpinSpeed = Math.Max(CurrentSpinSpeed - spinLoss, 0f);
 
     // ==== DESGASTE DE TEMPO DE VIDA (TIMELEFT) ====
     // Representa a perda de estabilidade/estamina da Beyblade
@@ -524,22 +519,22 @@ private void HandleImpact(
     }
 
     // Se for um NPC, aplicamos o knockback residual aqui, pois NPCs não usam a física de Beyblade
-    if (targetNPC != null)
+    if (targetNpc != null)
     {
-        float npcResist = 1f - targetNPC.knockBackResist;
-        targetNPC.velocity += normal * (impactStrength / stats.Mass) * stats.KnockbackPower * npcResist;
+        float npcResist = 1f - targetNpc.knockBackResist;
+        targetNpc.velocity += normal * (impactStrength / Stats.Mass) * Stats.KnockbackPower * npcResist;
     }
 
-    ApplyAugmentOnHit(normal, effectiveImpact, otherProj, targetNPC);
+    ApplyAugmentOnHit(normal, effectiveImpact, otherProj, targetNpc);
 }
 
 
 
-private void ApplyAugmentOnHit(Vector2 normal, float impactStrength, Projectile otherProj, NPC targetNPC)
+private void ApplyAugmentOnHit(Vector2 normal, float impactStrength, Projectile otherProj, NPC targetNpc)
         {
             Player player = Main.player[Projectile.owner];
 
-            for (int i = AmmoSlotStart; i <= AmmoSlotEnd; i++)
+            for (int i = AMMO_SLOT_START; i <= AMMO_SLOT_END; i++)
             {
                 Item item = player.inventory[i];
                 if (item.ModItem is not BeybladeAugment aug)
@@ -550,7 +545,8 @@ private void ApplyAugmentOnHit(Vector2 normal, float impactStrength, Projectile 
                     normal,
                     impactStrength,
                     otherProj,
-                    targetNPC
+                    targetNpc,
+                    LastHitWasCrit
                 );
             }
         }
@@ -566,8 +562,8 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
             normal.Normalize();
 
             float impactStrength = Projectile.velocity.Length()
-                                   * MathF.Sqrt(MathHelper.Clamp(stats.Mass, 0.5f, 5f))
-                                   * currentSpinSpeed
+                                   * MathF.Sqrt(MathHelper.Clamp(Stats.Mass, 0.5f, 5f))
+                                   * CurrentSpinSpeed
                                    / (target.knockBackResist + 1f);
 
             impactStrength = MathHelper.Clamp(impactStrength, 0f, 8f);
@@ -642,7 +638,7 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
                 Projectile.velocity.Y += trackNormal.Y * 0.15f;
             }
 
-            stats.TipFriction *= 0.3f;
+            Stats.TipFriction *= 0.3f;
         }
 
         #endregion
@@ -652,7 +648,7 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         public override bool OnTileCollide(Vector2 oldVelocity)
         {
             
-            float bounceFactor = (stats.Density < 0.5f) ? 1.0f : 0.5f; 
+            float bounceFactor = (Stats.Density < 0.5f) ? 1.0f : 0.5f; 
             if (Projectile.velocity.Y != oldVelocity.Y)
                 Projectile.velocity.Y = -oldVelocity.Y * bounceFactor;
             
@@ -675,7 +671,7 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
 private void ApplyContinuousDamage()
 {
     // ================== CALCULA INTERVALO DE HITS ==================
-    float aps = spinSpeed * 0.25f;
+    float aps = SpinSpeed * 0.25f;
     int hitDelay = (int)MathHelper.Clamp(60f / Math.Max(aps, 0.1f), 3, 60);
     
     hitRateTimer++;
@@ -733,7 +729,7 @@ private void ApplyContinuousDamage()
     }
 
     #region Global NPC
-    public class BeybladeNPC : GlobalNPC
+    public class BeybladeNpc : GlobalNPC
     {
         private Projectile lastContact;
         private int timer;

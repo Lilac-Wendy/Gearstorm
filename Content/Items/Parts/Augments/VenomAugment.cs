@@ -22,7 +22,7 @@ public class VenomAugment : BeybladeAugment
         spriteBatch.Draw(texture, position, null, Color.Purple * 0.8f, 0f, origin, scale, SpriteEffects.None, 0f);
     }
 
-    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target)
+    public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
     {
         target.AddBuff(BuffID.Venom, 420);
         if (target.HasBuff(BuffID.Venom))

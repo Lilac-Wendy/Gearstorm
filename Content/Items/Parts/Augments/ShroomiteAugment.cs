@@ -1,54 +1,113 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
+using Gearstorm.Content.Projectiles.Beyblades;
+using Terraria.ModLoader;
 
 namespace Gearstorm.Content.Items.Parts.Augments
 {
     public class ShroomiteAugment : BeybladeAugment
     {
         public override string Texture => "Gearstorm/Assets/Items/Parts/Augment";
-        public override Color AugmentColor => Color.DeepSkyBlue;
+        public override Color AugmentColor => new Color(43, 100, 255);
+        public static float LastDistanceBonus = 0f;
 
-        public override string ExtraDescription => 
-            "[c/00BFFF:Fungal Stealth]\n" +
-            "Damage increases the [c/00BFFF:further away] you are from the Beyblade.\n" +
-            "Increases damage by [c/00FF00:+50% every 25 blocks] of distance.\n" +
-            "There is [c/FF0000:no limit] to how much this can scale.\n" +
-            "Just a totally unsuspicious beyblade minding its own business.";
 
-        public override void OnBeybladeHit(
-            Projectile projectile,
-            Vector2 normal,
-            float impactStrength,
-            Projectile otherProj,
-            NPC targetNPC)
+        public override void ModifyTooltips(List<TooltipLine> tooltips)
         {
-            if (targetNPC == null)
+            Color mainColor = new Color(43, 100, 255);
+
+            tooltips.Add(new TooltipLine(Mod, "AugHeader", "[c/2B64FF:Fungal Stealth]"));
+
+            float currentBonus = LastDistanceBonus; // pega o valor atualizado
+            tooltips.Add(new TooltipLine(Mod, "AugmentDistanceBonus",
+                $"Current distance bonus: [c/00FF00:+{currentBonus:F0}%]"
+            ));
+
+            tooltips.Add(new TooltipLine(Mod, "AugmentDescription",
+                "Deals extra damage based on distance from the Beyblade.\n" +
+                "Each 2 blocks increases damage by [c/00FF00:+5%].\n" +
+                "Extra damage is half of the Beyblade's base damage.\n" +
+                "Numbers will appear in [c/2b64ff:Dark Blue]."
+            ));
+
+            tooltips.Add(new TooltipLine(Mod, "AugmentFlavor",
+                "[c/AAAAAA:Just a totally unsuspicious Beyblade minding its own business.]"));
+        }
+
+
+        public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
+        {
+            if (target == null)
                 return;
 
-            Player player = Main.player[projectile.owner];
+            Player player = Main.player[beybladeProj.Projectile.owner];
 
-            // Calcula a distância entre o jogador e a Beyblade em pixels
-            float dist = Vector2.Distance(player.Center, projectile.Center);
+            // Distância entre jogador e Beyblade em pixels
+            float dist = Vector2.Distance(player.Center, beybladeProj.Projectile.Center);
 
-            // Nova Proporção: 25 blocos = 400 pixels (25 * 16).
-            // A cada 400 pixels, o bónus aumenta 0.5f (50%).
-            // Exemplo: a 50 blocos (800px), o bónus será de +100%.
-            float bonus = 1f + (dist / 400f) * 0.5f;
+            // Proporção: +5% cada 2 blocos (32px)
+            float damageMultiplier = 1f + (dist / 32f) * 0.05f;
 
-            // VFX de cogumelo brilhante para feedback visual
-            if (bonus > 1.1f)
+            // Base do dano extra = metade do projétil * multiplicador de distância
+            int baseExtraDamage = (int)(beybladeProj.Projectile.damage * 0.5f * damageMultiplier);
+            if (baseExtraDamage < 1)
+                return;
+
+            // Aplica multiplicador de crítico do projétil
+            if (wasCrit)
+            {
+                baseExtraDamage = (int)(baseExtraDamage * beybladeProj.CritMultiplier);
+            }
+            LastDistanceBonus = (damageMultiplier - 1f) * 100f; // percentual
+            // Cria o HitInfo manualmente (compatível com seu BaseBeybladeProjectile)
+            NPC.HitInfo hitInfo = new NPC.HitInfo
+            {
+                Damage = baseExtraDamage,
+                SourceDamage = baseExtraDamage,
+                Crit = wasCrit,
+                Knockback = 0f,
+                HitDirection = Math.Sign(target.Center.X - beybladeProj.Projectile.Center.X),
+                DamageType = beybladeProj.Projectile.DamageType,
+                InstantKill = false,
+                HideCombatText = true
+            };
+
+            // Aplica dano
+            target.StrikeNPC(hitInfo);
+
+            // Mostra o dano azul escuro
+            CombatText.NewText(
+                target.Hitbox,
+                new Color(43, 100, 255),
+                hitInfo.Damage,
+                dramatic: false,
+                dot: false
+            );
+
+            // Feedback visual (opcional)
+            if (damageMultiplier > 1.1f)
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    Dust d = Dust.NewDustDirect(targetNPC.position, targetNPC.width, targetNPC.height, DustID.GlowingMushroom, 0f, 0f, 100, default, 1.2f);
+                    Dust d = Dust.NewDustDirect(
+                        target.position,
+                        target.width,
+                        target.height,
+                        DustID.GlowingMushroom,
+                        0f, 0f, 100,
+                        default,
+                        1.2f
+                    );
                     d.velocity *= 0.5f;
                     d.noGravity = true;
                 }
             }
-
-            // O bónus deve ser aplicado no cálculo de dano final do seu sistema de Spinner
         }
+
+
 
         public override void AddRecipes()
         {

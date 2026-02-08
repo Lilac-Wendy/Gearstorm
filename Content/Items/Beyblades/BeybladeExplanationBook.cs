@@ -27,13 +27,13 @@ public override void ModifyTooltips(List<TooltipLine> tooltips)
         "• [c/66FFFF:Base Spin Speed:]   The primary energy resource of a Beyblade. Base Spin Speed defines how fast the Bey starts spinning at launch and acts as the foundation for all critical calculations. \n  Spin Speed is NOT final by itself. It is directly multiplied by [c/00FFAA:Balance].\n" +
         "• [c/00FFAA:Balance:] Multiplies Base Spin Speed and reduces Spin Decay. Final Spin = [b:Base Spin × Balance].\n" +
         "• [c/FF5555:Spin Decay:] How fast Spin is lost over time and impacts. Lower is better; strongly mitigated by Balance.\n" +
-        "• [c/BDBDBD:Moment of Inertia:] [c/FFFFFF:Mass × Radius]. Higher inertia resists Spin loss from friction and collisions.\n" +
+        "• [c/BDBDBD:Moment of Inertia:] [c/FFFFFF:Mass × Radius]. Higher inertia resists Spin loss from friction and collisions. A large carousel is hard to stop.\n" +
         "• [c/FFA500:Density:] Controls physical behavior. Low density bounces; high density stays grounded.\n" +
         "• [c/808080:Tip Friction:] Ground drag. Low friction enables drifting and wide movement arcs.\n" +
         "\n" +
         "[c/FFD700:Lesson 2: COMBAT & CRITICALS]\n" +
         "• [c/FF3333:Damage:] [b:Base Damage × (1 + Mass × 0.1) × Balance].\n" +
-        "• [c/FFFF66:Critical Chance:] Fully derived from effective Spin. Every [b:5.0 Spin] grants [b:100% Crit Chance] (capped).\n" +
+        "• [c/FFFF66:Critical Chance:] Critical Chance represents a Beyblade's maximum potential for critical hits. Every [b:1.0 Spin] grants [b:20% Crit Chance] (capped at 100%). \n" +
         "• [c/FF00FF:Over-Spinning:] Spin above [b:5.0] converts into Critical Damage. Each extra Spin grants [b:+40% Crit Damage], stacking infinitely.\n" +
         "• [c/FFCCAA:Knockback:] Scales with Mass and Knockback Power. Heavy Beys are harder to stop.\n" +
         "\n" +

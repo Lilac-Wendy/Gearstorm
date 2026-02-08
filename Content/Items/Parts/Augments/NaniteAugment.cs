@@ -8,7 +8,6 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.Audio;
 using Gearstorm.Content.Projectiles.Beyblades;
-using Gearstorm.Content.Items.Parts;
 using Terraria.GameContent;
 
 namespace Gearstorm.Content.Items.Parts.Augments;
@@ -132,12 +131,7 @@ public class NaniteAugment : BeybladeAugment
     
 
 
-    public override void OnBeybladeHit(
-    Projectile beyblade,
-    Vector2 hitNormal,
-    float impactStrength,
-    Projectile otherBeyblade,
-    NPC targetNPC)
+    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNpc, bool wasCrit)
 {
     if (Main.myPlayer != beyblade.owner)
         return;
@@ -145,10 +139,10 @@ public class NaniteAugment : BeybladeAugment
     Player player = Main.player[beyblade.owner];
 
     // ===================== CHAIN SEMPRE =====================
-    if (targetNPC != null)
+    if (targetNpc != null)
     {
         HashSet<int> hitNpcs = new();
-        ApplyChainDamage(player, targetNPC, beyblade.damage, hitNpcs, 0, beyblade.Center);
+        ApplyChainDamage(player, targetNpc, beyblade.damage, hitNpcs, 0, beyblade.Center);
     }
 
     // ===================== PROCURA ESFERA =====================
@@ -164,7 +158,7 @@ public class NaniteAugment : BeybladeAugment
         if (Main.rand.NextBool(7)) // ~14%
         {
             int idx = Projectile.NewProjectile(
-                beyblade.GetSource_OnHit(targetNPC),
+                beyblade.GetSource_OnHit(targetNpc),
                 beyblade.Center,
                 Vector2.Zero,
                 ProjectileID.Electrosphere,
@@ -199,7 +193,7 @@ public class NaniteAugment : BeybladeAugment
     }
 
     // ===================== KILL → CARGA =====================
-    if (targetNPC != null && (!targetNPC.active || targetNPC.life <= 0) && sphere != null)
+    if (targetNpc != null && (!targetNpc.active || targetNpc.life <= 0) && sphere != null)
     {
         _projectileCharges[sphere.whoAmI] =
             Math.Min(1f, _projectileCharges[sphere.whoAmI] + 0.15f);
@@ -218,7 +212,7 @@ public class NaniteAugment : BeybladeAugment
         charge >= 1f)
     {
         int idx = Projectile.NewProjectile(
-            beyblade.GetSource_OnHit(targetNPC),
+            beyblade.GetSource_OnHit(targetNpc),
             sphere.Center,
             Vector2.Zero,
             ProjectileID.MagnetSphereBall,

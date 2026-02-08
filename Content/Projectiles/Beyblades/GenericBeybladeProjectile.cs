@@ -26,7 +26,7 @@ namespace Gearstorm.Content.Projectiles.Beyblades
             string basePath,
             string bladePath)
         {
-            stats = combinedStats;
+            Stats = combinedStats;
             topTexturePath = topPath;
             baseTexturePath = basePath;
             bladeTexturePath = bladePath;

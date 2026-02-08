@@ -39,10 +39,10 @@ namespace Gearstorm.Content.Projectiles
             // =========================
             // PEGAR SHADER DO DYE
             // =========================
-            int dyeID = ItemID.VortexDye;
+            int dyeId = ItemID.VortexDye;
 
             ArmorShaderData shader =
-                GameShaders.Armor.GetShaderFromItemId(dyeID);
+                GameShaders.Armor.GetShaderFromItemId(dyeId);
 
             // =========================
             // APLICAR SHADER
@@ -100,14 +100,14 @@ namespace Gearstorm.Content.Projectiles
 
         public override void AI()
         {
-            int parentID = (int)Projectile.ai[2];
-            if (parentID < 0 || parentID >= Main.maxProjectiles)
+            int parentId = (int)Projectile.ai[2];
+            if (parentId < 0 || parentId >= Main.maxProjectiles)
             {
                 Projectile.Kill();
                 return;
             }
 
-            Projectile parent = Main.projectile[parentID];
+            Projectile parent = Main.projectile[parentId];
             if (!parent.active)
             {
                 Projectile.Kill();
