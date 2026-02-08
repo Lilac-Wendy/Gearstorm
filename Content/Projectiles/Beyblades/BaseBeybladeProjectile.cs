@@ -32,8 +32,7 @@ namespace Gearstorm.Content.Projectiles.Beyblades
         public BeybladeStats Stats;
 
         #endregion
-
-        #region Defaults
+        #region Defaults and ModifyHitNPC
 
         public override void SetStaticDefaults()
         {
@@ -131,6 +130,7 @@ namespace Gearstorm.Content.Projectiles.Beyblades
 
 
         #endregion
+        #region Helper Color Code
 private Color MixAugmentColors(List<Color> colors)
 {
     if (colors == null || colors.Count == 0)
@@ -141,13 +141,12 @@ private Color MixAugmentColors(List<Color> colors)
 
     float sumX = 0f, sumY = 0f, sumS = 0f, sumV = 0f;
     int validCount = 0;
-
-    // --- PARTE 1: RGB -> HSV E SOMA CIRCULAR ---
+    
     foreach (Color c in colors)
     {
         if (c.A == 0) continue;
 
-        // Conversão RGB para HSV embutida
+
         float r = c.R / 255f;
         float g = c.G / 255f;
         float b = c.B / 255f;
@@ -179,8 +178,7 @@ private Color MixAugmentColors(List<Color> colors)
     }
 
     if (validCount == 0) return Color.Transparent;
-
-    // --- PARTE 2: MÉDIAS E CLAMPS ---
+    
     float avgHue = (float)Math.Atan2(sumY, sumX) / MathHelper.TwoPi;
     if (avgHue < 0f) avgHue += 1f;
 
@@ -208,8 +206,7 @@ private Color MixAugmentColors(List<Color> colors)
 
     return new Color((byte)(fr * 255), (byte)(fg * 255), (byte)(fb * 255));
 }
-
-
+#endregion
         #region AI
 
         public override void AI()
@@ -573,6 +570,7 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
 
 
         #endregion
+        #region Minecart Logic (RESTORED + FIXED)
         private void SnapToTrack(Vector2 trackPosition, Vector2 trackNormal)
         {
             float baseHeight = 2f;
@@ -590,7 +588,7 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
             }
         }
 
-        #region Minecart Logic (RESTORED + FIXED)
+
 
         protected void CheckMinecartTrackCollision(ref bool onTrack)
         {
@@ -642,7 +640,6 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         }
 
         #endregion
-
         #region Tile Collision
 
         public override bool OnTileCollide(Vector2 oldVelocity)
@@ -661,69 +658,66 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         }
 
         #endregion
-
         #region Combat
 
-#region Combat
 
-#region Combat
 
-private void ApplyContinuousDamage()
-{
-    // ================== CALCULA INTERVALO DE HITS ==================
-    float aps = SpinSpeed * 0.25f;
-    int hitDelay = (int)MathHelper.Clamp(60f / Math.Max(aps, 0.1f), 3, 60);
+        private void ApplyContinuousDamage()
+        {
+            // ================== CALCULA INTERVALO DE HITS ==================
+            float aps = SpinSpeed * 0.25f;
+            int hitDelay = (int)MathHelper.Clamp(60f / Math.Max(aps, 0.1f), 3, 60);
     
-    hitRateTimer++;
+            hitRateTimer++;
 
-    if (hitRateTimer < hitDelay)
-        return;
+            if (hitRateTimer < hitDelay)
+                return;
 
-    hitRateTimer = 0;
-    float radius = Projectile.width * 0.5f;
+            hitRateTimer = 0;
+            float radius = Projectile.width * 0.5f;
 
-    // ================== VERIFICA TODOS OS NPCs ==================
-    for (int i = 0; i < Main.maxNPCs; i++)
-    {
-        NPC npc = Main.npc[i];
+            // ================== VERIFICA TODOS OS NPCs ==================
+            for (int i = 0; i < Main.maxNPCs; i++)
+            {
+                NPC npc = Main.npc[i];
 
-        // Filtros básicos
-        if (!npc.active || npc.friendly || npc.dontTakeDamage || npc.immune[Projectile.owner] > 0)
-            continue;
+                // Filtros básicos
+                if (!npc.active || npc.friendly || npc.dontTakeDamage || npc.immune[Projectile.owner] > 0)
+                    continue;
 
-        // Distância
-        if (Vector2.DistanceSquared(Projectile.Center, npc.Center) > (radius + 24f) * (radius + 24f))
-            continue;
+                // Distância
+                if (Vector2.DistanceSquared(Projectile.Center, npc.Center) > (radius + 24f) * (radius + 24f))
+                    continue;
 
        
 
-        // ================== APLICA O DANO ==================
-        // Cria HitInfo com a flag de crítico correta
-        NPC.HitInfo hitInfo = new NPC.HitInfo
-        {
-            Damage = Projectile.damage,
-            Knockback = Projectile.knockBack * 0.5f,
-            HitDirection = Math.Sign(npc.Center.X - Projectile.Center.X),
-            DamageType = Projectile.DamageType
-        };
+                // ================== APLICA O DANO ==================
+                // Cria HitInfo com a flag de crítico correta
+                NPC.HitInfo hitInfo = new NPC.HitInfo
+                {
+                    Damage = Projectile.damage,
+                    Knockback = Projectile.knockBack * 0.5f,
+                    HitDirection = Math.Sign(npc.Center.X - Projectile.Center.X),
+                    DamageType = Projectile.DamageType
+                };
 
-        // Aplica o dano
-        int damageDealt = npc.StrikeNPC(hitInfo);
+                // Aplica o dano
+                int damageDealt = npc.StrikeNPC(hitInfo);
         
-        // Cooldown de imunidade
-        npc.immune[Projectile.owner] = hitDelay;
+                // Cooldown de imunidade
+                npc.immune[Projectile.owner] = hitDelay;
         
-        // ================== FÍSICA DO IMPACTO ==================
-        // Chama OnHitNPC para aplicar knockback e física
-        OnHitNPC(npc, hitInfo, damageDealt);
-    }
-}
+                // ================== FÍSICA DO IMPACTO ==================
+                // Chama OnHitNPC para aplicar knockback e física
+                OnHitNPC(npc, hitInfo, damageDealt);
+            }
+        }
 
 
 
-#endregion
 
-#endregion
+
+
 
         #endregion
     }
