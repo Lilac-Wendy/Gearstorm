@@ -27,7 +27,7 @@ namespace Gearstorm.Content.Items.Parts
         public override void SetDefaults()
         {
             Item.width = 44;
-            Item.height = 18;
+            Item.height = 9;
             Item.maxStack = 1;
             Item.value = Item.sellPrice(silver: 2);
             Item.rare = ItemRarityID.White;

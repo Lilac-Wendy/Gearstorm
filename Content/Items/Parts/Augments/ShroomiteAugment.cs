@@ -12,7 +12,7 @@ namespace Gearstorm.Content.Items.Parts.Augments
     {
         public override string Texture => "Gearstorm/Assets/Items/Parts/Augment";
         public override Color AugmentColor => new Color(43, 100, 255);
-        public static float LastDistanceBonus = 0f;
+        public static float LastDistanceBonus;
 
 
         public override void ModifyTooltips(List<TooltipLine> tooltips)

@@ -14,7 +14,7 @@ public class CrystalAugment : BeybladeAugment
         "[c/FF69B4:Crystalline Fracture]\n" +
         "High-velocity impacts release [c/FFB6C1:4 Crystal Shards] toward enemies,\n" +
         " including if it hits another Beyblade. \n" +
-        "Each shard deals [c/FF69B4:50% of the blade's damage]\n" +
+        "Each shard deals [c/FF69B4:50% of the blade's base damage]\n" +
         "Brittle structure causes [c/FFB6C1:constant splintering] upon heavy collisions\n" +
         "'Beauty and lethality, shattered into a thousand pieces'";
     public override void PostDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor, Color itemColor, Vector2 origin, float scale)

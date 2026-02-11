@@ -104,7 +104,7 @@ public static BeybladeStats CombineStats(
 
     float spin = l.BaseSpinSpeed;
 
-// Crit chance: 20% per 1.0 Spin. Base chance of critical hits. Effectiveness decreases as Spin Speed decays.
+// Crit chance: 20% per 1.0 Spin. Base chance of critical hits. 
     float rawCritChance = spin * 0.20f;
 
 // Cap em 100%

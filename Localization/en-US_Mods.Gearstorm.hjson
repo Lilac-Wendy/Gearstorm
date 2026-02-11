@@ -169,6 +169,7 @@ Projectiles: {
 	StarterBeyProjectile.DisplayName: Starter Bey Projectile
 	GenericBeybladeProjectile.DisplayName: Generic Beyblade Projectile
 	VortexOrbitalProjectile.DisplayName: Vortex Orbital Projectile
+	VenomGas.DisplayName: Venom Gas
 }
 
 Buffs: {

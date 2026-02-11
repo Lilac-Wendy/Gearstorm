@@ -17,6 +17,7 @@ namespace Gearstorm.Content.Projectiles.Beyblades
         private string bladeTexturePath;
 
         private bool texturesLoaded;
+        private float visualRailOffset;
 
         public override string Texture => "Terraria/Images/Item_0";
 
@@ -35,11 +36,27 @@ namespace Gearstorm.Content.Projectiles.Beyblades
         public override void SetDefaults()
         {
             base.SetDefaults();
-            Projectile.scale = 1.5f;
+
+            Vector2 center = Projectile.Center;
+
+            Projectile.Resize(Projectile.width, Projectile.height);
+
+            Projectile.Center = center;
         }
+
 
         public override bool PreDraw(ref Color lightColor)
         {
+            // ================== VISUAL RAIL OFFSET ==================
+            if (OnTrack)
+            {
+                visualRailOffset = MathHelper.Lerp(visualRailOffset, 6f, 0.35f);
+            }
+            else
+            {
+                visualRailOffset = MathHelper.Lerp(visualRailOffset, 0f, 0.35f);
+            }
+
             if (!texturesLoaded)
             {
                 topTexture = ModContent.Request<Texture2D>(topTexturePath).Value;
@@ -49,45 +66,57 @@ namespace Gearstorm.Content.Projectiles.Beyblades
             }
 
             int frame = Projectile.frame;
-            float scale = 0.5f * Projectile.scale;
-    
-            // Se ele está "afundado" ou de cabeça para baixo, 
-            // talvez o offset precise ser negativo (-14f) para subir.
-            // Ajuste este valor conforme necessário.
-            Vector2 pos = Projectile.Center - Main.screenPosition + new Vector2(0f, 14f);
 
-            Rectangle baseFrame = baseTexture.Frame(1, 2, 0, frame % 2);
+            // >>> AQUI está a correção <<<
+            Vector2 pos =
+                Projectile.Center
+                - Main.screenPosition
+                + new Vector2(0f, visualRailOffset);
+
+            Rectangle baseFrame  = baseTexture.Frame(1, 2, 0, frame % 2);
             Rectangle bladeFrame = bladeTexture.Frame(1, 4, 0, frame % 4);
-            Rectangle topFrame = topTexture.Frame(1, 2, 0, frame % 2);
+            Rectangle topFrame   = topTexture.Frame(1, 2, 0, frame % 2);
 
-            // Usamos FlipVertically se a sprite original estiver invertida no eixo Y
-            SpriteEffects flip = SpriteEffects.FlipVertically; 
-    
-            // Se você quer que ele rode normalmente mas as imagens apareçam "certas",
-            // desenhamos na ordem Base -> Blade -> Top:
+            SpriteEffects flip = SpriteEffects.FlipVertically;
+            SpriteEffects noflip = SpriteEffects.None;
 
-            // 1. BASE
+            // ================== TOP ==================
             Main.EntitySpriteDraw(
-                baseTexture, pos, baseFrame, lightColor,
-                Projectile.rotation, baseFrame.Size() / 2f,
-                scale, flip, 0
-            );
-    
-            // 2. BLADE
-            Main.EntitySpriteDraw(
-                bladeTexture, pos, bladeFrame, lightColor,
-                Projectile.rotation, bladeFrame.Size() / 2f,
-                scale, flip, 0
-            );
-    
-            // 3. TOP (Agora realmente no topo visual e na ordem de desenho)
-            Main.EntitySpriteDraw(
-                topTexture, pos, topFrame, lightColor,
-                Projectile.rotation, topFrame.Size() / 2f,
-                scale, flip, 0
+                topTexture,
+                pos,
+                topFrame,
+                Projectile.GetAlpha(lightColor),
+                Projectile.rotation,
+                topFrame.Size() / 2f,
+                1f,
+                flip
             );
 
-            return false;
+            // ================== BLADE ==================
+            Main.EntitySpriteDraw(
+                bladeTexture,
+                pos,
+                bladeFrame,
+                Projectile.GetAlpha(lightColor),
+                Projectile.rotation,
+                bladeFrame.Size() / 2f,
+                1f,
+                noflip
+            );
+
+            // ================== BASE ==================
+            Main.EntitySpriteDraw(
+                baseTexture,
+                pos,
+                baseFrame,
+                Projectile.GetAlpha(lightColor),
+                Projectile.rotation,
+                baseFrame.Size() / 2f,
+                1f,
+                flip
+            );
+
+            return false; // cancela o draw vanilla
         }
     }
 }

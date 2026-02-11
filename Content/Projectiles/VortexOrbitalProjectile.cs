@@ -76,8 +76,7 @@ namespace Gearstorm.Content.Projectiles
                 Projectile.rotation,
                 origin,
                 Projectile.scale,
-                SpriteEffects.None,
-                0
+                SpriteEffects.None
             );
 
             // =========================

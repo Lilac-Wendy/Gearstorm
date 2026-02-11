@@ -15,7 +15,7 @@ public class FrostAugment : BeybladeAugment
     public override string ExtraDescription =>
         "[c/ADD8E6:Cryogenic Impact]\n" +
         $"Strikes inflict {(Main.hardMode ? "[c/00BFFF:Frostbite]" : "[c/00FFFF:Frostburn]")}\n" +
-        "Hitting an already frozen foe [c/ADD8E6:shatters] the ice for [c/00FFFF:30% bonus critical damage and slow them down]\n"; 
+        "Hitting an already frozen foe [c/ADD8E6:shatters] the ice for [c/00FFFF:30% bonus damage that can crit and slow them down]\n"; 
 
 
     public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
@@ -24,15 +24,18 @@ public class FrostAugment : BeybladeAugment
 
         if (target.HasBuff(BuffID.Frostburn) || target.HasBuff(BuffID.Frostburn2))
         {
-            int shatterDamage = (int)(beybladeProj.Projectile.damage * 0.30f);
-            target.StrikeNPC(target.CalculateHitInfo(shatterDamage, 0, true, 0));
-
-            for (int i = 0; i < 10; i++)
-                Dust.NewDust(target.position, target.width, target.height, DustID.SnowflakeIce);
-            target.AddBuff(BuffID.Chilled,240);
-            target.AddBuff(BuffID.Slow,120);
+            int shatterDamage = (int)(beybladeProj.Projectile.damage * 1.30f);
+            
+            if (wasCrit)
+            {
+                shatterDamage = (int)(shatterDamage * beybladeProj.CritMultiplier);
+            }
+            if (shatterDamage < 1)
+                for (int i = 0; i < 10; i++)
+                    Dust.NewDust(target.position, target.width, target.height, DustID.SnowflakeIce);
+                    target.AddBuff(BuffID.Chilled,240);
+                    target.AddBuff(BuffID.Slow,120);
         }
-
         target.AddBuff(debuffType, 240);
     }
 

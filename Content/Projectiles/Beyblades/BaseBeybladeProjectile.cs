@@ -14,23 +14,27 @@ namespace Gearstorm.Content.Projectiles.Beyblades
     public abstract class BaseBeybladeProjectile : ModProjectile
     {
         #region Variables
+        //
         public bool LastHitWasCrit;
         public float CurrentSpinSpeed;
         protected float SpinSpeed = 1f;
+        //
         protected bool OnGround;
+
+
+        //
         protected int HitCooldown;
         private int hitRateTimer;
         protected const int AMMO_SLOT_START = 54;
         protected const int AMMO_SLOT_END = 57;
+        //
         public float CritMultiplier => Stats.CritMultiplier;
-
-        protected virtual bool CanCrit(Player player, NPC target) => true;
-        protected const float SPIN_TO_DPS_FACTOR = 4f;
-        public int ShimmerFlightTimer = 0;
+        protected static bool CanCrit(Player player, NPC target) => true;
+        //
         public Color AugmentColor { get; set; } = Color.Transparent;
 
         public BeybladeStats Stats;
-
+        //
         #endregion
         #region Defaults and ModifyHitNPC
 
@@ -42,14 +46,11 @@ namespace Gearstorm.Content.Projectiles.Beyblades
         public override void SetDefaults()
         {
             // ================== HITBOX FÍSICA ==================
-            // Raio vem da Blade (em tiles)
             int diameter = (Stats.Radius > 0f)
                 ? (int)(Stats.Radius * 2f * 16f)
-                : 32;
+                : 16;
 
-            Projectile.width = diameter;
-            Projectile.height = diameter;
-
+            Projectile.Resize(diameter,diameter);
             // ================== FLAGS BÁSICAS ==================
             Projectile.friendly = true;
             Projectile.penetrate = -1;
@@ -57,14 +58,7 @@ namespace Gearstorm.Content.Projectiles.Beyblades
             Projectile.tileCollide = true;
             Projectile.ignoreWater = true;
             Projectile.DamageType = ModContent.GetInstance<Spinner>();
-
-            // ================== OFFSET VISUAL ==================
-            // Height do Top influencia SOMENTE o visual
-            // Tops mais altos levantam o centro visual
-            MathHelper.Clamp(Stats.Height, 0f, 1f);
-
-            // Valor negativo puxa o sprite para baixo
-            Projectile.gfxOffY = 0f;
+            
 
             // ================== COMBATE ==================
             Projectile.knockBack = Stats.KnockbackPower > 0f
@@ -212,6 +206,95 @@ private Color MixAugmentColors(List<Color> colors)
         public override void AI()
         {
             HandleBeybladeVsBeyblade();
+            UpdateRailGrind();
+            
+// ================== RAIL LEVITATION BEAM ==================
+if (OnTrack && Main.rand.NextBool(2))
+{
+    Vector2 beamPos = Projectile.Bottom + new Vector2(Main.rand.NextFloat(-4f, 4f), 2f);
+    
+    // Cores do beam com variação
+    Color beamColor = AugmentColor == Color.Transparent ? 
+        Color.Lerp(Color.LightBlue, Color.Cyan, Main.rand.NextFloat(0.3f)) : 
+        Color.Lerp(AugmentColor, Color.White, 0.3f);
+    
+    // Beam principal (mais intenso)
+    Dust beam = Dust.NewDustPerfect(
+        beamPos,
+        DustID.GolfPaticle,
+        new Vector2(Main.rand.NextFloat(-0.2f, 0.2f), Main.rand.NextFloat(1.2f, 2f)),
+        100,
+        beamColor,
+        Main.rand.NextFloat(1.1f, 1.6f)
+    );
+    
+    beam.noGravity = true;
+    beam.rotation = MathHelper.PiOver2; // Rotação vertical
+    beam.fadeIn = 1.2f; // Suaviza o aparecimento
+    
+    // Partículas secundárias (para efeito de "fumaça" ou resíduo)
+    if (Main.rand.NextBool(3))
+    {
+        Dust secondary = Dust.NewDustPerfect(
+            beamPos + new Vector2(Main.rand.NextFloat(-2f, 2f), 0),
+            DustID.Smoke,
+            new Vector2(Main.rand.NextFloat(-0.3f, 0.3f), Main.rand.NextFloat(0.5f, 1.2f)),
+            150,
+            beamColor.MultiplyRGB(Color.Gray) * 0.7f,
+            Main.rand.NextFloat(0.7f, 1.1f)
+        );
+        
+        secondary.noGravity = true;
+        secondary.velocity *= 0.5f;
+    }
+    
+    // Efeito de "ponta" do beam (parte mais brilhante no início)
+    if (Main.rand.NextBool(4))
+    {
+        Dust tip = Dust.NewDustPerfect(
+            beamPos,
+            DustID.Electric,
+            new Vector2(0, Main.rand.NextFloat(0.8f, 1.5f)),
+            80,
+            beamColor.MultiplyRGB(Color.White) * 1.2f,
+            Main.rand.NextFloat(0.5f, 0.9f)
+        );
+        
+        tip.noGravity = true;
+        tip.velocity *= 0.3f;
+    }
+}
+
+// Adicional: Para fazer os beams diminuírem ao longo do tempo,
+// você precisaria de um ModDust personalizado, mas aqui está uma alternativa
+
+
+if (OnTrack && Main.rand.NextBool(3)) // Frequência reduzida para beams mais longos
+{
+    Vector2 beamPos = Projectile.Bottom + new Vector2(Main.rand.NextFloat(-3f, 3f), 1f);
+    
+    // Cria uma sequência de dusts que diminuem em escala
+    for (int i = 0; i < 3; i++) // 3 partículas em sequência
+    {
+        float offsetY = i * 4f; // Espaçamento vertical
+        float scale = 1.4f - (i * 0.3f); // Diminui a escala
+        
+        Dust sequentialBeam = Dust.NewDustPerfect(
+            beamPos + new Vector2(0, offsetY),
+            DustID.GolfPaticle,
+            new Vector2(Main.rand.NextFloat(-0.1f, 0.1f), 0.2f), // Movimento mais lento
+            120 + (i * 40), // Aumenta transparência
+            AugmentColor == Color.Transparent ? 
+                Color.Lerp(Color.LightBlue, Color.White, i * 0.2f) : 
+                Color.Lerp(AugmentColor, Color.White, i * 0.15f),
+            scale
+        );
+        
+        sequentialBeam.noGravity = true;
+        sequentialBeam.rotation = MathHelper.PiOver2;
+        sequentialBeam.velocity *= 0.7f;
+    }
+}
 
             /* ================== AUGMENT VISUAL (MIXED) ================== */
 
@@ -250,23 +333,8 @@ private Color MixAugmentColors(List<Color> colors)
                 );
                 d.noGravity = true;
             }
+            
 
-
-
-            /* ================== TRACK + GRAVITY ================== */
-
-            bool onTrack = false;
-            CheckMinecartTrackCollision(ref onTrack);
-
-            switch (onTrack)
-            {
-                case false:
-                    Projectile.velocity.Y += 0.35f; // gravidade correta
-                    break;
-                case true:
-                    Projectile.velocity.Y = Math.Min(Projectile.velocity.Y, 0.1f);
-                    break;
-            }
 
             /* ================== GROUND CHECK ================== */
             float groundProbe = 1f;
@@ -276,7 +344,7 @@ private Color MixAugmentColors(List<Color> colors)
                 Collision.SolidCollision(
                     Projectile.BottomLeft + new Vector2(0, groundProbe),
                     Projectile.width,
-                    2
+                    1
                 );
 
             if (OnGround)
@@ -432,8 +500,8 @@ private Color MixAugmentColors(List<Color> colors)
 
         // ==== EFEITOS E CALLBACKS ====
         // Passamos o impulso escalar para o tratamento de efeitos
-        HandleImpact(normal, impulseMag, other, null);
-        otherBey.HandleImpact(-normal, impulseMag, Projectile, null);
+        HandleImpact(normal, impulseMag, other);
+        otherBey.HandleImpact(-normal, impulseMag, Projectile);
     }
 }
 
@@ -570,76 +638,109 @@ public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
 
 
         #endregion
-        #region Minecart Logic (RESTORED + FIXED)
-        private void SnapToTrack(Vector2 trackPosition, Vector2 trackNormal)
-        {
-            float baseHeight = 2f;
+       #region Minecart Logic (tML 1.4.4+ — CRASH FIXED)
 
-            float targetY = trackPosition.Y - Projectile.height + baseHeight;
-            float diff = targetY - Projectile.position.Y;
+       public bool OnTrack;
+private Vector2 lastBoost;
+private int fallStart;
 
-            Projectile.position.Y += MathHelper.Clamp(diff, -2f, 2f);
+/// <summary>
+/// Atualiza o comportamento de grind nas tracks usando o sistema vanilla.
+/// </summary>
+private void UpdateRailGrind()
+{
+    int owner = Projectile.owner;
+    if (owner < 0 || owner >= Main.maxPlayers)
+    {
+        ApplyNormalGravity();
+        OnTrack = false;
+        return;
+    }
+
+    Player player = Main.player[owner];
+    if (player == null || !player.active)
+    {
+        ApplyNormalGravity();
+        OnTrack = false;
+        return;
+    }
+
+    // Mount ou delegates ainda não inicializados → NÃO PODE chamar TrackCollision
+    if (player.mount == null ||
+        player.mount._data == null ||
+        player.mount._data.delegations == null)
+    {
+        ApplyNormalGravity();
+        OnTrack = false;
+        return;
+    }
+
+    // Necessário para rampas
+    if (Projectile.velocity.Y == 0f)
+        fallStart = (int)(Projectile.position.Y / 16f);
+
+    BitsByte trackFlags = Minecart.TrackCollision(
+        player,
+        ref Projectile.position,
+        ref Projectile.velocity,
+        ref lastBoost,
+        Projectile.width,
+        Projectile.height,
+        followDown: false,
+        followUp: false,
+        fallStart: fallStart,
+        trackOnly: false,
+        delegatesData: player.mount._data.delegations
+    );
+
+    OnTrack = trackFlags[Minecart.Flag_OnTrack];
+
+    if (OnTrack)
+        ApplyRailPhysics(trackFlags);
+    else
+        ApplyNormalGravity();
+}
+
+private void ApplyRailPhysics(BitsByte trackFlags)
+{
+    Projectile.gfxOffY = -16f;
+    
+    Projectile.velocity.Y = 0f;
+    if (trackFlags[Minecart.Flag_BoostLeft])
+        Projectile.velocity.X -= Minecart.BoosterSpeed;
+
+    if (trackFlags[Minecart.Flag_BoostRight])
+        Projectile.velocity.X += Minecart.BoosterSpeed;
+
+    // Bumpers elásticos
+    if (trackFlags[Minecart.Flag_BouncyBumper])
+        Projectile.velocity *= 1.1f;
+
+    // Hammer / switch
+    if (trackFlags[Minecart.Flag_HitSwitch])
+    {
+        Minecart.HitTrackSwitch(
+            Projectile.position,
+            Projectile.width,
+            Projectile.height
+        );
+    }
+
+    // Atrito leve de grind
+    Projectile.velocity *= 0.995f;
+
+    // Integração com seus stats
+    Stats.TipFriction *= 0.3f;
+}
+
+private void ApplyNormalGravity()
+{
+    Projectile.velocity.Y += 0.35f;
+}
+
+#endregion
 
 
-            if (Math.Abs(trackNormal.X) > 0.1f)
-            {
-                float xDiff = (trackPosition.X + 8f) - Projectile.Center.X;
-                Projectile.position.X += xDiff * 0.3f;
-            }
-        }
-
-
-
-        protected void CheckMinecartTrackCollision(ref bool onTrack)
-        {
-            Vector2 checkPos = Projectile.Bottom + new Vector2(0, 2);
-            Point tilePos = checkPos.ToTileCoordinates();
-
-            if (!WorldGen.InWorld(tilePos.X, tilePos.Y))
-                return;
-
-            Tile tile = Main.tile[tilePos.X, tilePos.Y];
-            if (tile == null || !tile.HasTile || tile.TileType != TileID.MinecartTrack)
-                return;
-
-            onTrack = true;
-
-            Vector2 trackPos = new(tilePos.X * 16, tilePos.Y * 16);
-
-            Vector2 normal = tile.Slope switch
-            {
-                SlopeType.SlopeDownLeft => new Vector2(-1, 1),
-                SlopeType.SlopeDownRight => new Vector2(1, 1),
-                SlopeType.SlopeUpLeft => new Vector2(-1, -1),
-                SlopeType.SlopeUpRight => new Vector2(1, -1),
-                _ => Vector2.UnitY
-            };
-
-            SnapToTrack(trackPos, normal);
-            ApplyTrackPhysics(normal);
-        }
-
-
-        protected void ApplyTrackPhysics(Vector2 trackNormal)
-        {
-            if (trackNormal != Vector2.Zero)
-                trackNormal.Normalize();
-
-            Projectile.velocity.X += trackNormal.X * 0.15f;
-
-            if (Math.Abs(trackNormal.Y) < 0.1f)
-            {
-                Projectile.velocity.Y = Math.Min(Projectile.velocity.Y, 0.2f);
-            }
-            else
-            {
-                Projectile.velocity.Y += trackNormal.Y * 0.15f;
-            }
-
-            Stats.TipFriction *= 0.3f;
-        }
-
-        #endregion
         #region Tile Collision
 
         public override bool OnTileCollide(Vector2 oldVelocity)

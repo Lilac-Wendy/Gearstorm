@@ -34,7 +34,7 @@ public class FireAugment : BeybladeAugment
         int debuffType = Main.hardMode ? BuffID.OnFire3 : BuffID.OnFire;
         target.AddBuff(debuffType, 240);
         int bonusDamage = (int)(beybladeProj.Projectile.damage * 0.15f);
-        var hit = target.CalculateHitInfo(bonusDamage, 0, false, 0);
+        var hit = target.CalculateHitInfo(bonusDamage, 0);
         target.StrikeNPC(hit);
         for (int i = 0; i < 5; i++) {
             Dust.NewDust(target.position, target.width, target.height, DustID.Flare);

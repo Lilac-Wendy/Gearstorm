@@ -13,8 +13,8 @@ namespace Gearstorm.Content.Items.Beyblades
         {
             Item.width = 28;
             Item.height = 32;
-            Item.rare = ItemRarityID.Green;
-            Item.value = Item.buyPrice(0, 1, 0, 0);
+            Item.rare = ItemRarityID.Red;
+            Item.value = Item.buyPrice(0, 2);
             Item.maxStack = 1;
             Item.useStyle = ItemUseStyleID.HoldUp;
             
@@ -33,7 +33,7 @@ public override void ModifyTooltips(List<TooltipLine> tooltips)
         "\n" +
         "[c/FFD700:Lesson 2: COMBAT & CRITICALS]\n" +
         "• [c/FF3333:Damage:] [b:Base Damage × (1 + Mass × 0.1) × Balance].\n" +
-        "• [c/FFFF66:Critical Chance:] Critical Chance represents a Beyblade's maximum potential for critical hits. Every [b:1.0 Spin] grants [b:20% Crit Chance] (capped at 100%). \n" +
+        "• [c/FFFF66:Critical Chance:] Critical Chance represents a Beyblade's maximum potential for critical hits. Every [b:1.0 Spin] grants [b:20%Crit Chance] (capped at 100%).\n" +
         "• [c/FF00FF:Over-Spinning:] Spin above [b:5.0] converts into Critical Damage. Each extra Spin grants [b:+40% Crit Damage], stacking infinitely.\n" +
         "• [c/FFCCAA:Knockback:] Scales with Mass and Knockback Power. Heavy Beys are harder to stop.\n" +
         "\n" +
@@ -47,7 +47,7 @@ public override void ModifyTooltips(List<TooltipLine> tooltips)
         "• [c/8B4513:JUGGERNAUT:] Extreme Inertia. Hard to accelerate, nearly impossible to slow.\n" +
         "• [c/00FFFF:METEOR:] Low Density, High Mass. Chaotic bounces and aerial hits.\n" +
         "\n" +
-        "[c/FFD700:Lesson 4: ADVANCED]\n" +
+        "[c/FFD700:Lesson 4: ADVANCED MANEUVERS]\n" +
         "• [b:Rail Grinding:] Tracks reduce friction and allow directional control.\n" +
         "• [b:Augments:] Up to 4 can trigger simultaneously on hit.\n" +
         "• [b:Stability:] Heavy impacts drain Spin; low-Inertia builds must avoid dense targets."
@@ -60,9 +60,6 @@ public override void ModifyTooltips(List<TooltipLine> tooltips)
 }
 
 
-
-
-        // Caso queira que ele faça algo ao usar, como um som de virar página
         public override bool? UseItem(Player player)
         {
             if (player.whoAmI == Main.myPlayer)
