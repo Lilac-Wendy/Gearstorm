@@ -23,7 +23,7 @@ namespace Gearstorm.Content.Projectiles
             Projectile.width = 18;
             Projectile.height = 18;
             Projectile.friendly = true;
-            Projectile.timeLeft = 160;
+            Projectile.timeLeft = 1400;
             Projectile.penetrate = -1;
             Projectile.tileCollide = false;
             Projectile.ignoreWater = true;
@@ -50,51 +50,132 @@ namespace Gearstorm.Content.Projectiles
 
             return false;
         }
+        public override void AI()
+        {
+            int parentId = (int)Projectile.ai[2];
+
+            if (parentId < 0 ||
+                parentId >= Main.maxProjectiles ||
+                !Main.projectile[parentId].active)
+            {
+                Projectile.Kill();
+                return;
+            }
+
+            Projectile parent = Main.projectile[parentId];
+
+            float phase = Projectile.ai[1]; 
+
+            float angularSpeed = 0.07f;
+            Projectile.ai[0] += angularSpeed;
+            float theta = Projectile.ai[0];
+
+            float R0 = 260f;
+            float k = 16f;
+            float power = 1.08f;
+
+            float baseRadius =
+                R0 - k * (float)Math.Pow(theta, power);
+
+            if (baseRadius <= 12f)
+            {
+                Projectile.Kill();
+                return;
+            }
+
+            float modulationStrength = 0.12f;
+            float frequency = 10f;
+
+            float finalRadius =
+                baseRadius *
+                (1f + modulationStrength *
+                    (float)Math.Sin(frequency * theta + phase));
+
+            Vector2 direction = theta.ToRotationVector2();
+
+            Projectile.Center =
+                parent.Center +
+                direction * finalRadius;
+
+            Projectile.velocity =
+                direction.RotatedBy(MathHelper.PiOver2) * 1.4f;
+
+            Projectile.rotation += 0.15f;
+
+            trailA?.AddPoint(Projectile.Center, 18f);
+            trailA?.Update();
+
+            Lighting.AddLight(
+                Projectile.Center,
+                0.0f,
+                0.9f,
+                0.7f
+            );
+        }
 
 
-        
 
         public override void OnSpawn(IEntitySource source)
         {
-            trailA = new PrimitiveTrail();
-            trailB = new PrimitiveTrail();
-            Color vortexWhiteCyan = new(190, 255, 210);   // branco esverdeado etéreo
-            Color vortexCyan = new(0, 255, 170);          // ciano puxado pro verde
-            Color vortexGreen = new(0, 200, 90);          // verde místico intenso
-            Color tealBright = new(120, 255, 140);        // verde-luz vibrante
-            Color voidDark = new(5, 40, 25);              // fundo verde profundo
+            trailA = new PrimitiveTrail(); // agora é a única trail usada
 
+            Color vortexWhiteCyan = new(190, 255, 210);
+            Color vortexCyan      = new(0, 255, 170);
+            Color vortexGreen     = new(0, 200, 90);
+            Color tealBright      = new(120, 255, 140);
+            Color voidDark        = new(5, 40, 25);
+
+            // ==========================
+            // WIDTH
+            // ==========================
             trailA.WidthFunction = progress =>
             {
-                float t = progress * progress * (3f - 2f * progress); // SmoothStep inline
-                return 4f + (26f - 4f) * t;
+                progress = MathHelper.Clamp(progress, 0f, 1f);
+                float t = MathHelper.SmoothStep(0f, 1f, progress);
+
+                // mais fino perto do centro
+                return 4f + 24f * t;
             };
-            trailB.WidthFunction = progress =>
-            {
-                float t = progress * progress * (3f - 2f * progress);
-                return 3f + (20f - 3f) * t;
-            };
+
+            // ==========================
+            // COLOR (gradiente forte)
+            // ==========================
             trailA.ColorFunction = progress =>
             {
-                float t = progress * progress * (3f - 2f * progress);
-                Color baseColor;
-                if (progress < 0.3f)
+                progress = MathHelper.Clamp(progress, 0f, 1f);
+
+                // ponta externa clara
+                float t = 1f - progress;
+
+                // curva mais agressiva para mudar mais rápido
+                t = (float)Math.Pow(t, 0.65f);
+
+                Color color;
+
+                if (t < 0.4f)
                 {
-                    float local = progress / 0.3f;
-                    baseColor = Color.Lerp(vortexWhiteCyan, vortexCyan, local);
+                    color = Color.Lerp(vortexWhiteCyan, vortexCyan, t / 0.4f);
+                }
+                else if (t < 0.75f)
+                {
+                    color = Color.Lerp(
+                        vortexCyan,
+                        vortexGreen,
+                        (t - 0.4f) / 0.35f
+                    );
                 }
                 else
                 {
-                    float local = (progress - 0.3f) / 0.7f;
-                    baseColor = Color.Lerp(vortexCyan, vortexGreen, local);
+                    color = Color.Lerp(
+                        vortexGreen,
+                        voidDark,
+                        (t - 0.75f) / 0.25f
+                    );
                 }
 
-                return baseColor * t;
-            };
-            trailB.ColorFunction = progress =>
-            {
-                float t = progress * progress * (3f - 2f * progress);
-                return Color.Lerp(tealBright, voidDark, progress) * t;
+                float alpha = MathHelper.SmoothStep(0f, 1f, progress);
+
+                return color * alpha;
             };
         }
 
@@ -102,87 +183,15 @@ namespace Gearstorm.Content.Projectiles
 
 
 
-public override void AI()
-{
-    int parentId = (int)Projectile.ai[2];
 
-    bool parentValid =
-        parentId >= 0 &&
-        parentId < Main.maxProjectiles &&
-        Main.projectile[parentId].active;
 
-    if (!parentValid)
-    {
-        Projectile.velocity = Vector2.Zero;
-        Projectile.rotation += 0.1f;
-        trailA?.Update();
-        trailB?.Update();
-        if ((trailA == null || !trailA.IsAlive) &&
-            (trailB == null || !trailB.IsAlive))
-        {
-            Projectile.Kill();
-        }
+       
 
-        return;
-    }
 
-    Projectile parent = Main.projectile[parentId];
 
-    float angle = Projectile.ai[0];
-    float radius = Projectile.ai[1];
-    float angularSpeed = 0.25f;
-    float inwardSpeed = 4f;
-    float spinDir = 1f;
-    angle += angularSpeed * spinDir;
-    radius -= inwardSpeed;
 
-    Projectile.ai[0] = angle;
-    Projectile.ai[1] = radius;
-    if (radius <= 10f)
-    {
-        Projectile.ai[2] = -1;
-        return;
-    }
 
-    float globalSpin = Main.GlobalTimeWrappedHourly * 0.4f;
-    float t = Main.GlobalTimeWrappedHourly * 8f;
 
-    float dnaA = (float)Math.Sin(t) * 12f;
-    float dnaB = (float)Math.Sin(t * 1.08f + MathHelper.Pi) * 12f;
-
-    Vector2 spiralDir = (angle + globalSpin).ToRotationVector2();
-
-    float combinedRadius =
-        radius + (dnaA + dnaB) * 0.5f;
-
-    Projectile.Center =
-        parent.Center +
-        spiralDir * combinedRadius;
-
-    Projectile.velocity =
-        spiralDir * -inwardSpeed;
-
-    Projectile.rotation += 0.35f * spinDir;
-
-    Vector2 normal = spiralDir.RotatedBy(MathHelper.PiOver2);
-
-    Vector2 posA = Projectile.Center + normal * dnaA * 0.4f;
-    Vector2 posB = Projectile.Center + normal * dnaB * 0.4f;
-
-    // 🔥 Novo sistema — adiciona ponto com lifetime
-    trailA?.AddPoint(posA, 18f);
-    trailB?.AddPoint(posB, 18f);
-
-    trailA?.Update();
-    trailB?.Update();
-
-    Lighting.AddLight(
-        Projectile.Center,
-        0.0f,
-        0.8f,
-        0.7f
-    );
-}
 
     }
 }

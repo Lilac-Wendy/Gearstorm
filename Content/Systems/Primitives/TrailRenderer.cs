@@ -77,9 +77,13 @@ namespace Gearstorm.Content.Systems.Primitives
             device.BlendState = BlendState.Additive; // ou AlphaBlend, mas Additive era usado antes
             device.RasterizerState = RasterizerState.CullNone;
             device.DepthStencilState = DepthStencilState.None;
+            Vector2 screenCenter = new Vector2(Main.screenWidth * 0.5f, Main.screenHeight * 0.5f);
+            Vector2 worldCenter = Main.screenPosition + screenCenter;
 
-            effect.World = Matrix.Identity;
-            effect.View = Matrix.Identity;
+            effect.View = Matrix.CreateTranslation(-worldCenter.X, -worldCenter.Y, 0) *
+                          Matrix.CreateScale(Main.GameZoomTarget, Main.GameZoomTarget, 1) *
+                          Matrix.CreateTranslation(screenCenter.X, screenCenter.Y, 0);
+            
             effect.Projection = Matrix.CreateOrthographicOffCenter(
                 0, Main.screenWidth, Main.screenHeight, 0, 0, 1);
 

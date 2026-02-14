@@ -92,26 +92,43 @@ namespace Gearstorm.Content.Items.Parts.Augments
 
     if (spawnByCrit || spawnByHits)
     {
-        int orbitalCount = 2;
+        int helixPairs = 1; 
 
-        for (int i = 0; i < orbitalCount; i++)
+        for (int i = 0; i < helixPairs; i++)
         {
-            float angle = MathHelper.TwoPi * i / orbitalCount;
+            float initialTheta = 0f; 
+            int parentId = projectile.whoAmI;
 
+            //  A
             Projectile.NewProjectile(
                 projectile.GetSource_FromThis(),
-                projectile.Center + angle.ToRotationVector2() * spawnRadius,
+                projectile.Center,
                 Vector2.Zero,
                 ModContent.ProjectileType<VortexOrbitalProjectile>(),
                 (projectile.damage / 2) * affectedEnemies,
                 0f,
                 projectile.owner,
-                angle,
-                spawnRadius,
-                projectile.whoAmI
+                initialTheta,   // ai[0] = theta 
+                0f,             // ai[1] = phase
+                parentId        // ai[2]
+            );
+
+            //  B
+            Projectile.NewProjectile(
+                projectile.GetSource_FromThis(),
+                projectile.Center,
+                Vector2.Zero,
+                ModContent.ProjectileType<VortexOrbitalProjectile>(),
+                (projectile.damage / 2) * affectedEnemies,
+                0f,
+                projectile.owner,
+                initialTheta,
+                MathHelper.Pi,  //opposite phase
+                parentId
             );
         }
     }
+
 
     Terraria.Audio.SoundEngine.PlaySound(
         SoundID.Item62 with { Pitch = 0.5f, Volume = 0.6f },

@@ -83,7 +83,7 @@ namespace Gearstorm.Content.Systems.Primitives
             {
                 float progress = i / (float)(points.Count - 1);
 
-                Vector2 current = points[i].Position - Main.screenPosition;
+                Vector2 current = points[i].Position;
 
                 Vector2 direction;
 
