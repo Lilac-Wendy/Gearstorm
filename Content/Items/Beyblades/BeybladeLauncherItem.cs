@@ -47,7 +47,7 @@ namespace Gearstorm.Content.Items.Beyblades
             Item.noUseGraphic = false;
             Item.shoot = ModContent.ProjectileType<GenericBeybladeProjectile>();
             Item.shootSpeed = 10f;
-
+            Item.useAmmo = 0;
             InitializeParts();
         }
 
@@ -108,11 +108,36 @@ namespace Gearstorm.Content.Items.Beyblades
             BeybladeStats stats = GetCurrentStats();
             UpdateItemStats(stats);
 
+            // ===============================
+            // PEGAR AUGMENT
+            // ===============================
+
+            int dummyProj;
+            float dummySpeed;
+            int dummyDamage;
+            float dummyKb;
+            int usedAmmoType;
+
+            if (!player.PickAmmo(
+                    Item,
+                    out dummyProj,
+                    out dummySpeed,
+                    out dummyDamage,
+                    out dummyKb,
+                    out usedAmmoType))
+                return false;
+
+            // ===============================
+            // GARANTE PROJÉTIL CERTO
+            // ===============================
+
+            int projTypeFinal = ModContent.ProjectileType<GenericBeybladeProjectile>();
+
             int projIndex = Projectile.NewProjectile(
                 source,
                 position,
                 velocity,
-                type,
+                projTypeFinal,
                 (int)stats.DamageBase,
                 stats.KnockbackPower,
                 player.whoAmI
@@ -128,10 +153,14 @@ namespace Gearstorm.Content.Items.Beyblades
                     GetTexturePath(BeybladeParts[0]), // Top
                     GetTexturePath(BeybladeParts[1])  // Blade
                 );
+                
             }
 
-            return false; // evita disparo vanilla duplicado
+            return false;
         }
+
+
+
 
         // ==================================================
         // STATUS

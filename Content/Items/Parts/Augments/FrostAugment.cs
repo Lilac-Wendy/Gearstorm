@@ -1,4 +1,5 @@
 ﻿using Gearstorm.Content.Projectiles.Beyblades;
+using Gearstorm.Content.Systems;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -15,8 +16,17 @@ public class FrostAugment : BeybladeAugment
     public override string ExtraDescription =>
         "[c/ADD8E6:Cryogenic Impact]\n" +
         $"Strikes inflict {(Main.hardMode ? "[c/00BFFF:Frostbite]" : "[c/00FFFF:Frostburn]")}\n" +
-        "Hitting an already frozen foe [c/ADD8E6:shatters] the ice for [c/00FFFF:30% bonus damage that can crit and slow them down]\n"; 
+        "Hitting an already frozen foe [c/ADD8E6:shatters] the ice for [c/00FFFF:30% bonus damage that can crit and slow them down]\n" +
+        "[c/ADD8E6:Cryogenic Field]: Freezes liquids on contact, turning water into ice, lava into obsidian, and honey into honey blocks.";
 
+    // ---------- NOVO: Congelar líquidos ----------
+    public override void UpdateAugment(BaseBeybladeProjectile beybladeProj)
+    {
+        FrostLiquidSystem.FreezeLiquidsAround(beybladeProj.Projectile, 1);
+    }
+
+        
+    // ---------------------------------------------
 
     public override void ApplyAugmentEffect(BaseBeybladeProjectile beybladeProj, NPC target, bool wasCrit)
     {

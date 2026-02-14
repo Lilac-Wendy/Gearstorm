@@ -14,6 +14,7 @@ namespace Gearstorm.Content.Projectiles.Beyblades
     public abstract class BaseBeybladeProjectile : ModProjectile
     {
         #region Variables
+
         //
         public bool LastHitWasCrit;
         public float CurrentSpinSpeed;
@@ -201,7 +202,10 @@ private Color MixAugmentColors(List<Color> colors)
     return new Color((byte)(fr * 255), (byte)(fg * 255), (byte)(fb * 255));
 }
 #endregion
-        #region AI
+        #region AugmentFreezeSystemHelpers
+
+#endregion
+#region AI
 
         public override void AI()
         {
@@ -423,6 +427,14 @@ if (OnTrack && Main.rand.NextBool(3)) // Frequência reduzida para beams mais lo
 
             if (HitCooldown > 0)
                 HitCooldown--;
+            for (int i = AMMO_SLOT_START; i <= AMMO_SLOT_END; i++)
+            {
+                Item item = Main.player[Projectile.owner].inventory[i];
+                if (item.ModItem is BeybladeAugment aug)
+                {
+                    aug.UpdateAugment(this);
+                }
+            }
         }
 
 
@@ -597,11 +609,10 @@ private void HandleImpact(
 
 private void ApplyAugmentOnHit(Vector2 normal, float impactStrength, Projectile otherProj, NPC targetNpc)
         {
-            Player player = Main.player[Projectile.owner];
 
             for (int i = AMMO_SLOT_START; i <= AMMO_SLOT_END; i++)
             {
-                Item item = player.inventory[i];
+                Item item = Main.player[Projectile.owner].inventory[i];
                 if (item.ModItem is not BeybladeAugment aug)
                     continue;
 
