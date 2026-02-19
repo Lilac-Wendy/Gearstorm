@@ -17,106 +17,108 @@ namespace Gearstorm.Content.Projectiles.Beyblades
         private string bladeTexturePath;
 
         private bool texturesLoaded;
-        private float visualRailOffset;
 
+        
         public override string Texture => "Terraria/Images/Item_0";
 
-        public void InitializeWithParts(
-            BeybladeStats combinedStats,
-            string topPath,
-            string basePath,
-            string bladePath)
+        public override void SetStaticDefaults()
+        {
+            Main.projFrames[Projectile.type] = 8;
+        }
+
+        public void InitializeWithParts(BeybladeStats combinedStats, string topPath, string basePath, string bladePath)
         {
             Stats = combinedStats;
             topTexturePath = topPath;
             baseTexturePath = basePath;
             bladeTexturePath = bladePath;
+            texturesLoaded = false; 
         }
 
         public override void SetDefaults()
         {
             base.SetDefaults();
-
-            Vector2 center = Projectile.Center;
-
-            Projectile.Resize(Projectile.width, Projectile.height);
-
-            Projectile.Center = center;
+            int size = (Stats.Radius > 0) ? (int)(Stats.Radius * 32) : 32;
+            Projectile.width = size;
+            Projectile.height = size;
         }
-
-
-        public override bool PreDraw(ref Color lightColor)
+ public override bool PreDraw(ref Color lightColor)
+{
+    // 1. VERIFICAÇÃO DE CARREGAMENTO
+    if (!texturesLoaded)
+    {
+        if (!string.IsNullOrEmpty(topTexturePath))
         {
-            // ================== VISUAL RAIL OFFSET ==================
-            if (OnTrack)
-            {
-                visualRailOffset = MathHelper.Lerp(visualRailOffset, 6f, 0.35f);
-            }
-            else
-            {
-                visualRailOffset = MathHelper.Lerp(visualRailOffset, 0f, 0.35f);
-            }
+            topTexture = ModContent.Request<Texture2D>(topTexturePath).Value;
+            bladeTexture = ModContent.Request<Texture2D>(bladeTexturePath).Value;
+            baseTexture = ModContent.Request<Texture2D>(baseTexturePath).Value;
 
-            if (!texturesLoaded)
-            {
-                topTexture = ModContent.Request<Texture2D>(topTexturePath).Value;
-                baseTexture = ModContent.Request<Texture2D>(baseTexturePath).Value;
-                bladeTexture = ModContent.Request<Texture2D>(bladeTexturePath).Value;
-                texturesLoaded = true;
-            }
-
-            int frame = Projectile.frame;
-
-            // >>> AQUI está a correção <<<
-            Vector2 pos =
-                Projectile.Center
-                - Main.screenPosition
-                + new Vector2(0f, visualRailOffset);
-
-            Rectangle baseFrame  = baseTexture.Frame(1, 2, 0, frame % 2);
-            Rectangle bladeFrame = bladeTexture.Frame(1, 4, 0, frame % 4);
-            Rectangle topFrame   = topTexture.Frame(1, 2, 0, frame % 2);
-
-            SpriteEffects flip = SpriteEffects.FlipVertically;
-            SpriteEffects noflip = SpriteEffects.None;
-
-            // ================== TOP ==================
-            Main.EntitySpriteDraw(
-                topTexture,
-                pos,
-                topFrame,
-                Projectile.GetAlpha(lightColor),
-                Projectile.rotation,
-                topFrame.Size() / 2f,
-                1f,
-                flip
-            );
-
-            // ================== BLADE ==================
-            Main.EntitySpriteDraw(
-                bladeTexture,
-                pos,
-                bladeFrame,
-                Projectile.GetAlpha(lightColor),
-                Projectile.rotation,
-                bladeFrame.Size() / 2f,
-                1f,
-                noflip
-            );
-
-            // ================== BASE ==================
-            Main.EntitySpriteDraw(
-                baseTexture,
-                pos,
-                baseFrame,
-                Projectile.GetAlpha(lightColor),
-                Projectile.rotation,
-                baseFrame.Size() / 2f,
-                1f,
-                flip
-            );
-
-            return false; // cancela o draw vanilla
+            texturesLoaded = (topTexture != null && baseTexture != null && bladeTexture != null);
         }
+        return false; 
+    }
+
+    // CORREÇÃO DO SPRITEBATCH:
+    // Fechamos o batch atual do Terraria para poder iniciar o nosso com as flags específicas
+    Main.spriteBatch.End();
+    Main.spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend, Main.DefaultSamplerState, DepthStencilState.None, Main.Rasterizer, null, Main.GameViewMatrix.TransformationMatrix);
+
+    Vector2 drawPos = Projectile.Center - Main.screenPosition + new Vector2(0f, Projectile.gfxOffY);
+    Color drawColor = Projectile.GetAlpha(lightColor);
+
+    int frameHeight = 20;
+    int startY = frameHeight * Projectile.frame;
+    Rectangle sourceRectangle = new Rectangle(0, startY, 88, frameHeight);
+
+    Vector2 origin = new Vector2(44f, 10f);
+    float stackGap = 6f; 
+    Vector2 topOffset = new Vector2(0, stackGap).RotatedBy(Projectile.rotation);
+    Vector2 baseOffset = new Vector2(0, -stackGap).RotatedBy(Projectile.rotation);
+
+    // 1. BASE
+    Main.EntitySpriteDraw(
+        baseTexture, 
+        drawPos + baseOffset, 
+        sourceRectangle, 
+        drawColor, 
+        Projectile.rotation, 
+        origin, 
+        Projectile.scale, 
+        SpriteEffects.None, 
+        0.1f // Valor de profundidade para o BackToFront
+    );
+    
+    // 2. BLADE (meio)
+    Main.EntitySpriteDraw(
+        bladeTexture, 
+        drawPos, 
+        sourceRectangle, 
+        drawColor, 
+        Projectile.rotation, 
+        origin, 
+        Projectile.scale, 
+        SpriteEffects.None, 
+        0.5f
+    );
+    
+    // 3. TOP (Frente)
+    Main.EntitySpriteDraw(
+        topTexture, 
+        drawPos + topOffset, 
+        sourceRectangle, 
+        drawColor, 
+        Projectile.rotation, 
+        origin, 
+        Projectile.scale, 
+        SpriteEffects.None, 
+        0.9f
+    );
+
+    Main.spriteBatch.End();
+    // Reabrimos o batch padrão para o Terraria continuar desenhando o resto sem crashar
+    Main.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.DefaultSamplerState, DepthStencilState.None, Main.Rasterizer, null, Main.GameViewMatrix.TransformationMatrix);
+
+    return false; 
+}
     }
 }

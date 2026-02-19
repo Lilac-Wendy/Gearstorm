@@ -37,7 +37,7 @@ namespace Gearstorm.Content.Systems.Primitives
             TrailRenderer.Unregister(this);
         }
 
-        public void AddPoint(Vector2 position, float lifetime = 240f)
+        public void AddPoint(Vector2 position, float lifetime = 280f)
         {
             if (points.Count >= MAX_POINTS)
                 points.RemoveAt(0);
@@ -50,7 +50,7 @@ namespace Gearstorm.Content.Systems.Primitives
             });
         }
 
-        public void Update()
+        public virtual void Update()
         {
             for (int i = points.Count - 1; i >= 0; i--)
             {
@@ -64,7 +64,7 @@ namespace Gearstorm.Content.Systems.Primitives
             }
         }
 
-        internal int BuildVertexBuffer(out VertexPositionColor[] buffer)
+        internal virtual int BuildVertexBuffer(out VertexPositionColor[] buffer)
         {
             
             buffer = Array.Empty<VertexPositionColor>();
@@ -103,15 +103,15 @@ namespace Gearstorm.Content.Systems.Primitives
 
                 float width = WidthFunction?.Invoke(progress) ?? 10f;
                 Color baseColor = ColorFunction?.Invoke(progress) ?? Color.White;
-                Color finalColor = baseColor * points[i].Opacity;
+                float pointOpacity = points[i].Opacity; 
+                
+                float finalAlpha = (baseColor.A / 255f) * pointOpacity;
+                Color finalColor = baseColor * finalAlpha; 
 
-                Vector2 offset = normal * width * 0.5f;
+                Vector2 offset = normal * (width * 0.5f);
 
-                vertexBuffer[idx++] =
-                    new VertexPositionColor(new Vector3(current - offset, 0f), finalColor);
-
-                vertexBuffer[idx++] =
-                    new VertexPositionColor(new Vector3(current + offset, 0f), finalColor);
+                vertexBuffer[idx++] = new VertexPositionColor(new Vector3(current - offset, 0f), finalColor);
+                vertexBuffer[idx++] = new VertexPositionColor(new Vector3(current + offset, 0f), finalColor);
             }
 
 

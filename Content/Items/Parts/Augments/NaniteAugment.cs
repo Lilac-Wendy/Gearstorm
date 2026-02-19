@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -8,6 +8,7 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.Audio;
 using Gearstorm.Content.Projectiles.Beyblades;
+using Gearstorm.Content.Systems.Primitives;
 using Terraria.GameContent;
 
 namespace Gearstorm.Content.Items.Parts.Augments;
@@ -28,137 +29,42 @@ public class NaniteAugment : BeybladeAugment
     private static Dictionary<int, float> _projectileCharges = new();
     private static Dictionary<int, uint> _magnetExplosionSchedule = new();
 
-    // ====================== CORE OVERRIDES (TML) ======================
+     // ====================== CORE OVERRIDES (TML) ======================
 
     public override void Load()
     {
-        if (!Main.dedServ)
-            On_Main.DrawProjectiles += DrawArcsHook;
+        // Não precisamos mais do hook de desenho
     }
 
     public override void Unload()
     {
-        if (!Main.dedServ)
-            On_Main.DrawProjectiles -= DrawArcsHook;
-
-        _arcsToDraw.Clear();
         _projectileCharges.Clear();
         _magnetExplosionSchedule.Clear();
-
     }
 
     public override void UpdateAugment(BaseBeybladeProjectile beybladeProj)
-{
-    Projectile beyblade = beybladeProj.Projectile;
-    Player player = Main.player[beyblade.owner];
-
-
-    // ===================== GARANTIR 1 ELECTROSPHERE =====================
-    Projectile mainSphere = null;
-
-    for (int i = 0; i < Main.maxProjectiles; i++)
     {
-        Projectile p = Main.projectile[i];
-        if (p.active && p.owner == beyblade.owner && p.type == ProjectileID.Electrosphere)
+        Projectile beyblade = beybladeProj.Projectile;
+        Player player = Main.player[beyblade.owner];
+
+        // ===================== GARANTIR 1 ELECTROSPHERE =====================
+        Projectile mainSphere = null;
+
+        for (int i = 0; i < Main.maxProjectiles; i++)
         {
-            mainSphere = p;
-            break;
+            Projectile p = Main.projectile[i];
+            if (p.active && p.owner == beyblade.owner && p.type == ProjectileID.Electrosphere)
+            {
+                mainSphere = p;
+                break;
+            }
         }
-    }
 
-    // Spawn IMEDIATO se não existir
-    if (mainSphere == null && beyblade.owner == Main.myPlayer)
-    {
-        int idx = Projectile.NewProjectile(
-            beyblade.GetSource_FromAI(),
-            beyblade.Center,
-            Vector2.Zero,
-            ProjectileID.Electrosphere,
-            beyblade.damage / 2,
-            0f,
-            beyblade.owner
-        );
-
-        if (idx != Main.maxProjectiles)
-        {
-            mainSphere = Main.projectile[idx];
-            _projectileCharges[mainSphere.whoAmI] = 0f;
-        }
-    }
-
-    if (mainSphere == null)
-        return;
-
-    // ===================== ORBITA ESTÁVEL =====================
-    float angle = Main.GlobalTimeWrappedHourly * 3.5f;
-    Vector2 offset = new Vector2(0f, -48f).RotatedBy(angle);
-
-    mainSphere.Center = beyblade.Center + offset;
-    mainSphere.velocity = Vector2.Zero;
-    mainSphere.timeLeft = 60; // nunca morre sozinha
-    mainSphere.netUpdate = true;
-
-    if (!_projectileCharges.ContainsKey(mainSphere.whoAmI))
-        _projectileCharges[mainSphere.whoAmI] = 0f;
-
-    // ===================== ABSORÇÃO DE OUTRAS ESFERAS =====================
-    for (int i = 0; i < Main.maxProjectiles; i++)
-    {
-        Projectile p = Main.projectile[i];
-
-        if (!p.active ||
-            p.whoAmI == mainSphere.whoAmI ||
-            p.owner != beyblade.owner ||
-            p.type != ProjectileID.Electrosphere)
-            continue;
-
-        _projectileCharges[mainSphere.whoAmI] =
-            Math.Min(1f, _projectileCharges[mainSphere.whoAmI] + 0.10f);
-
-        NaniteAugment_AddArc(p.Center, mainSphere.Center, 1.2f);
-
-        CombatText.NewText(
-            mainSphere.getRect(),
-            Color.Cyan,
-            $"Charge: {(int)(_projectileCharges[mainSphere.whoAmI] * 100)}%",
-            true
-        );
-
-        p.Kill();
-        
-    }
-}
-    
-
-
-    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNpc, bool wasCrit)
-{
-    if (Main.myPlayer != beyblade.owner)
-        return;
-
-    Player player = Main.player[beyblade.owner];
-
-    // ===================== CHAIN SEMPRE =====================
-    if (targetNpc != null)
-    {
-        HashSet<int> hitNpcs = new();
-        ApplyChainDamage(player, targetNpc, beyblade.damage, hitNpcs, 0, beyblade.Center);
-    }
-
-    // ===================== PROCURA ESFERA =====================
-    Projectile sphere = Main.projectile.FirstOrDefault(p =>
-        p.active &&
-        p.owner == beyblade.owner &&
-        p.type == ProjectileID.Electrosphere
-    );
-
-    // ===================== SPAWN / ABSORÇÃO =====================
-    if (sphere == null)
-    {
-        if (Main.rand.NextBool(7)) // ~14%
+        // Spawn IMEDIATO se não existir
+        if (mainSphere == null && beyblade.owner == Main.myPlayer)
         {
             int idx = Projectile.NewProjectile(
-                beyblade.GetSource_OnHit(targetNpc),
+                beyblade.GetSource_FromAI(),
                 beyblade.Center,
                 Vector2.Zero,
                 ProjectileID.Electrosphere,
@@ -169,20 +75,140 @@ public class NaniteAugment : BeybladeAugment
 
             if (idx != Main.maxProjectiles)
             {
-                _projectileCharges[idx] = 0f;
-                SoundEngine.PlaySound(SoundID.Item93, beyblade.Center);
+                mainSphere = Main.projectile[idx];
+                _projectileCharges[mainSphere.whoAmI] = 0f;
             }
         }
+
+        if (mainSphere == null)
+            return;
+        
+        Vector2 offset = new Vector2(0f, -48f);
+        mainSphere.Center = beyblade.Center + offset;
+        mainSphere.velocity = Vector2.Zero;
+        mainSphere.timeLeft = 60; 
+        mainSphere.netUpdate = true;
+        
+        if (!_projectileCharges.ContainsKey(mainSphere.whoAmI))
+            _projectileCharges[mainSphere.whoAmI] = 0f;
+            
+        for (int i = 0; i < Main.maxProjectiles; i++)
+        {
+            Projectile p = Main.projectile[i];
+
+            if (!p.active ||
+                p.whoAmI == mainSphere.whoAmI ||
+                p.owner != beyblade.owner ||
+                p.type != ProjectileID.Electrosphere)
+                continue;
+
+            _projectileCharges[mainSphere.whoAmI] =
+                Math.Min(1f, _projectileCharges[mainSphere.whoAmI] + 0.10f);
+
+            // Substituído: NaniteAugment_AddArc(p.Center, mainSphere.Center, 1.2f);
+            if (!Main.dedServ)
+            {
+                _ = new PrimitiveLighting(
+                    p.Center, 
+                    mainSphere.Center, 
+                    Color.Cyan, 
+                    segments: 20, 
+                    thickness: 16f, 
+                    lifetime: 10, 
+                    noiseStrength: 25f
+                );
+            }
+
+            CombatText.NewText(
+                mainSphere.getRect(),
+                Color.Cyan,
+                $"Charge: {(int)(_projectileCharges[mainSphere.whoAmI] * 100)}%",
+                true
+            );
+
+            p.Kill();
+        }
     }
-    else
+
+    public override void OnBeybladeHit(Projectile beyblade, Vector2 hitNormal, float impactStrength, Projectile otherBeyblade, NPC targetNpc, bool wasCrit)
     {
-        // Absorção de qualquer tentativa de spawn
-        if (Main.rand.NextBool(7))
+        if (Main.myPlayer != beyblade.owner)
+            return;
+
+        Player player = Main.player[beyblade.owner];
+
+        // ===================== CHAIN SEMPRE =====================
+        if (targetNpc != null)
+        {
+            HashSet<int> hitNpcs = new();
+            ApplyChainDamage(player, targetNpc, beyblade.damage, hitNpcs, 0, beyblade.Center);
+        }
+
+        // ===================== PROCURA ESFERA =====================
+        Projectile sphere = Main.projectile.FirstOrDefault(p =>
+            p.active &&
+            p.owner == beyblade.owner &&
+            p.type == ProjectileID.Electrosphere
+        );
+
+        // ===================== SPAWN / ABSORÇÃO =====================
+        if (sphere == null)
+        {
+            if (Main.rand.NextBool(7)) // ~14%
+            {
+                int idx = Projectile.NewProjectile(
+                    beyblade.GetSource_OnHit(targetNpc),
+                    beyblade.Center,
+                    Vector2.Zero,
+                    ProjectileID.Electrosphere,
+                    beyblade.damage / 2,
+                    0f,
+                    beyblade.owner
+                );
+
+                if (idx != Main.maxProjectiles)
+                {
+                    _projectileCharges[idx] = 0f;
+                    SoundEngine.PlaySound(SoundID.Item93, beyblade.Center);
+                }
+            }
+        }
+        else
+        {
+            // Absorção de qualquer tentativa de spawn
+            if (Main.rand.NextBool(7))
+            {
+                _projectileCharges[sphere.whoAmI] =
+                    Math.Min(1f, _projectileCharges[sphere.whoAmI] + 0.10f);
+
+                // Substituído: NaniteAugment_AddArc(beyblade.Center, sphere.Center, 1f);
+                if (!Main.dedServ)
+                {
+                    _ = new PrimitiveLighting(
+                        beyblade.Center, 
+                        sphere.Center, 
+                        Color.Cyan, 
+                        segments: 15, 
+                        thickness: 12f, 
+                        lifetime: 6
+                    );
+                }
+
+                CombatText.NewText(
+                    sphere.getRect(),
+                    Color.Cyan,
+                    $"Charge {(int)(_projectileCharges[sphere.whoAmI] * 100)}%",
+                    true
+                );
+            }
+        }
+
+        // ===================== KILL → CARGA =====================
+        if (targetNpc != null && (!targetNpc.active || targetNpc.life <= 0) && sphere != null)
         {
             _projectileCharges[sphere.whoAmI] =
-                Math.Min(1f, _projectileCharges[sphere.whoAmI] + 0.10f);
+                Math.Min(1f, _projectileCharges[sphere.whoAmI] + 0.15f);
 
-            NaniteAugment_AddArc(beyblade.Center, sphere.Center, 1f);
             CombatText.NewText(
                 sphere.getRect(),
                 Color.Cyan,
@@ -190,66 +216,50 @@ public class NaniteAugment : BeybladeAugment
                 true
             );
         }
-    }
 
-    // ===================== KILL → CARGA =====================
-    if (targetNpc != null && (!targetNpc.active || targetNpc.life <= 0) && sphere != null)
-    {
-        _projectileCharges[sphere.whoAmI] =
-            Math.Min(1f, _projectileCharges[sphere.whoAmI] + 0.15f);
-
-        CombatText.NewText(
-            sphere.getRect(),
-            Color.Cyan,
-            $"Charge {(int)(_projectileCharges[sphere.whoAmI] * 100)}%",
-            true
-        );
-    }
-
-    // ===================== EVOLUÇÃO =====================
-    if (sphere != null &&
-        _projectileCharges.TryGetValue(sphere.whoAmI, out float charge) &&
-        charge >= 1f)
-    {
-        int idx = Projectile.NewProjectile(
-            beyblade.GetSource_OnHit(targetNpc),
-            sphere.Center,
-            Vector2.Zero,
-            ProjectileID.MagnetSphereBall,
-            (int)(beyblade.damage * 4.0f),
-            2f,
-            beyblade.owner
-        );
-
-        if (idx != Main.maxProjectiles)
+        // ===================== EVOLUÇÃO =====================
+        if (sphere != null &&
+            _projectileCharges.TryGetValue(sphere.whoAmI, out float charge) &&
+            charge >= 1f)
         {
-            Projectile p = Main.projectile[idx];
+            int idx = Projectile.NewProjectile(
+                beyblade.GetSource_OnHit(targetNpc),
+                sphere.Center,
+                Vector2.Zero,
+                ProjectileID.MagnetSphereBall,
+                (int)(beyblade.damage * 4.0f),
+                2f,
+                beyblade.owner
+            );
 
-            // Centro original (ANTES de mexer em size)
-            Vector2 center = p.Center;
-            
-            p.scale = 2.0f;
+            if (idx != Main.maxProjectiles)
+            {
+                Projectile p = Main.projectile[idx];
 
-            // Recalcula hitbox baseada na escala
-            int newSize = (int)(32 * p.scale); // MagnetSphereBall base = 32
+                // Centro original (ANTES de mexer em size)
+                Vector2 center = p.Center;
+                
+                p.scale = 2.0f;
 
-            p.width = newSize;
-            p.height = newSize;
+                // Recalcula hitbox baseada na escala
+                int newSize = (int)(32 * p.scale); // MagnetSphereBall base = 32
 
-            // REALINHA corretamente
-            p.Center = center;
+                p.width = newSize;
+                p.height = newSize;
 
-            p.netUpdate = true;
+                // REALINHA corretamente
+                p.Center = center;
+
+                p.netUpdate = true;
+            }
+
+            _projectileCharges.Remove(sphere.whoAmI);
+            sphere.Kill();
+
+            SoundEngine.PlaySound(SoundID.Item94, sphere.Center);
         }
-
-        _projectileCharges.Remove(sphere.whoAmI);
-        sphere.Kill();
-
-        SoundEngine.PlaySound(SoundID.Item94, sphere.Center);
     }
-}
     
-
     private void ApplyChainDamage(
         Player player,
         NPC currentTarget,
@@ -275,7 +285,21 @@ public class NaniteAugment : BeybladeAugment
 
         // ===== VISUAL =====
         SpawnLightningArc(lastPos, currentTarget.Center, 1.1f - chainCount * 0.08f);
-        NaniteAugment_AddArc(lastPos, currentTarget.Center, 1.2f - chainCount * 0.1f);
+        
+        // Substituído: NaniteAugment_AddArc(lastPos, currentTarget.Center, 1.2f - chainCount * 0.1f);
+        if (!Main.dedServ)
+        {
+            float intensity = 1.2f - chainCount * 0.1f;
+            _ = new PrimitiveLighting(
+                lastPos, 
+                currentTarget.Center, 
+                Color.Cyan,
+                segments: 25,
+                thickness: 14f * intensity,
+                lifetime: 8,
+                noiseStrength: 30f * intensity
+            );
+        }
         
         // ===== PRÓXIMO ALVO =====
         const float range = 360f;
@@ -295,8 +319,8 @@ public class NaniteAugment : BeybladeAugment
                 currentTarget.Center
             );
         }
-        
     }
+    
     private void SpawnLightningArc(Vector2 start, Vector2 end, float intensity)
     {
         Vector2 diff = end - start;
@@ -351,6 +375,7 @@ public class NaniteAugment : BeybladeAugment
             prev = point;
         }
     }
+
     private void CreateArcEffect(Vector2 start, Vector2 end)
     {
         int segments = 8;
@@ -368,10 +393,6 @@ public class NaniteAugment : BeybladeAugment
         }
     }
 
-    // ====================== REMAINING HELPERS ======================
-    
-
-
     public override void AddRecipes()
     {
         CreateRecipe()
@@ -382,98 +403,6 @@ public class NaniteAugment : BeybladeAugment
             .Register();
     }
 
-    // ====================== VISUALS & DRAWING ======================
-
-    public static void NaniteAugment_AddArc(Vector2 start, Vector2 end, float intensity)
-    {
-        _arcsToDraw.Add((start, end, intensity));
-    }
-
-    private void DrawArcsHook(On_Main.orig_DrawProjectiles orig, Main self)
-    {
-        orig(self);
-        if (_arcsToDraw.Count == 0) return;
-
-        Main.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive, Main.DefaultSamplerState, DepthStencilState.None, RasterizerState.CullNone, null, Main.GameViewMatrix.TransformationMatrix);
-        foreach (var arc in _arcsToDraw) DrawBeam(arc.Start, arc.End, arc.Intensity);
-        Main.spriteBatch.End();
-        _arcsToDraw.Clear();
-    }
-
-    private void DrawBeam(Vector2 start, Vector2 end, float intensity)
-    {
-        Texture2D texture = TextureAssets.Extra[98].Value;
-        Vector2 dist = end - start;
-        float fullLength = dist.Length();
-        if (fullLength <= 0f) return;
-        Vector2 unit = dist / fullLength;
-        int segments = Math.Max(2, (int)(fullLength / 18f));
-        Vector2 prevPos = start;
-        Vector2 perp = new Vector2(-unit.Y, unit.X);
-        float maxOffset = 14f * intensity;
-
-        for (int i = 1; i <= segments; i++)
-        {
-            float progress = i / (float)segments;
-
-            // posição base reta
-            Vector2 basePos = start + dist * progress;
-
-            // zigue-zague randômico (mudança brusca)
-            float zigzagStrength = Main.rand.NextFloat(-1f, 1f);
-            float attenuation = 1f - Math.Abs(progress - 0.5f) * 2f; // mais forte no meio
-
-            Vector2 currentPos =
-                basePos +
-                perp * zigzagStrength * maxOffset * attenuation;
-
-            Vector2 segDist = currentPos - prevPos;
-            float rot = segDist.ToRotation() + MathHelper.PiOver2;
-
-            float segmentIntensity = intensity * Main.rand.NextFloat(0.7f, 1.3f);
-
-            // Raio principal
-            Main.spriteBatch.Draw(
-                texture,
-                prevPos - Main.screenPosition,
-                null,
-                Color.Cyan * 0.45f * segmentIntensity,
-                rot,
-                new Vector2(texture.Width / 2f, 0f),
-                new Vector2(0.7f * segmentIntensity, segDist.Length() / 64f),
-                SpriteEffects.None,
-                0f
-            );
-
-            // Glow interno
-            Main.spriteBatch.Draw(
-                texture,
-                prevPos - Main.screenPosition,
-                null,
-                Color.White * 0.6f * segmentIntensity,
-                rot,
-                new Vector2(texture.Width / 2f, 0f),
-                new Vector2(0.25f * segmentIntensity, segDist.Length() / 64f),
-                SpriteEffects.None,
-                0f
-            );
-
-            prevPos = currentPos;
-        }
-
-    }
-
-    private void SpawnDustArcLine(Vector2 start, Vector2 end, float intensity)
-    {
-        Vector2 dist = end - start;
-        float length = dist.Length();
-        if (length < 5f) return;
-        int segments = Math.Max(3, (int)(length / 15f));
-        for (int i = 0; i <= segments; i++)
-        {
-            Vector2 pos = Vector2.Lerp(start, end, i / (float)segments);
-            Dust d = Dust.NewDustPerfect(pos, DustID.Electric, Main.rand.NextVector2Circular(1.5f, 1.5f), 100, Color.Cyan, 0.8f * intensity);
-            d.noGravity = true;
-        }
-    }
+    // ====================== VISUAIS LEGADO (MANTIDOS) ======================
+    // Mantivemos SpawnLightningArc e CreateArcEffect para os efeitos de poeira
 }

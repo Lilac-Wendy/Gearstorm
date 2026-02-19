@@ -34,6 +34,8 @@ namespace Gearstorm.Content.Projectiles.Beyblades
         //
         public Color AugmentColor { get; set; } = Color.Transparent;
 
+        private int animationTimer;
+        private const int AnimationSpeed = 4;
         public BeybladeStats Stats;
         //
         #endregion
@@ -41,7 +43,7 @@ namespace Gearstorm.Content.Projectiles.Beyblades
 
         public override void SetStaticDefaults()
         {
-            Main.projFrames[Projectile.type] = 2;
+            Main.projFrames[Projectile.type] = 8;
         }
 
         public override void SetDefaults()
@@ -75,6 +77,8 @@ namespace Gearstorm.Content.Projectiles.Beyblades
             // ================== SPIN ==================
             SpinSpeed = Stats.BaseSpinSpeed;
             CurrentSpinSpeed = SpinSpeed;
+            animationTimer = 0;
+            Projectile.frame = 0;
 
         }
 
@@ -161,8 +165,7 @@ private Color MixAugmentColors(List<Color> colors)
 
         float s = (max == 0) ? 0 : (delta / max);
         float v = max;
-
-        // Lógica circular para evitar cores "mortas" no meio
+        
         float hueRad = h * MathHelper.TwoPi;
         sumX += (float)Math.Cos(hueRad);
         sumY += (float)Math.Sin(hueRad);
@@ -179,8 +182,7 @@ private Color MixAugmentColors(List<Color> colors)
 
     float avgSat = MathHelper.Clamp(sumS / validCount, 0.55f, 0.9f);
     float avgVal = MathHelper.Clamp(sumV / validCount, 0.6f, 0.9f);
-
-    // --- PARTE 3: HSV -> RGB E RETORNO ---
+    
     int i = (int)Math.Floor(avgHue * 6);
     float f = avgHue * 6 - i;
     float p = avgVal * (1 - avgSat);
@@ -202,9 +204,7 @@ private Color MixAugmentColors(List<Color> colors)
     return new Color((byte)(fr * 255), (byte)(fg * 255), (byte)(fb * 255));
 }
 #endregion
-        #region AugmentFreezeSystemHelpers
 
-#endregion
 #region AI
 
         public override void AI()
@@ -411,14 +411,13 @@ if (OnTrack && Main.rand.NextBool(3)) // Frequência reduzida para beams mais lo
             }
 
             /* ================== ROTATION ================== */
-
-            Projectile.rotation = MathHelper.Clamp(Projectile.velocity.X * 0.05f, -0.3f, 0.3f);
-
-            if (++Projectile.frameCounter >= (int)(5 / SpinSpeed))
-            {
-                Projectile.frameCounter = 0;
-                Projectile.frame = (Projectile.frame + 1) % Main.projFrames[Projectile.type];
-            }
+            
+            float targetTilt = MathHelper.Clamp(Projectile.velocity.X * 0.06f, -0.4f, 0.4f);
+            Projectile.rotation = MathHelper.Lerp(Projectile.rotation, targetTilt, 0.15f);
+            
+            /* ================== ANIMAÇÃO CORRIGIDA ================== */
+            UpdateAnimation();
+    
 
             /* ================== DAMAGE ================== */
 
@@ -438,9 +437,28 @@ if (OnTrack && Main.rand.NextBool(3)) // Frequência reduzida para beams mais lo
         }
 
 
+        private void UpdateAnimation()
+        {
+            // Incrementa o timer a cada tick
+            animationTimer++;
+            
+            // Quando o timer atinge a velocidade definida, troca de frame
+            if (animationTimer >= AnimationSpeed)
+            {
+                animationTimer = 0;
+                
+                // Avança para o próximo frame
+                Projectile.frame++;
+                
+                // Volta ao primeiro frame quando chegar no último
+                if (Projectile.frame >= Main.projFrames[Projectile.type])
+                {
+                    Projectile.frame = 0;
+                }
+            }
+        }
 
-    
-        private void HandleBeybladeVsBeyblade()
+    private void HandleBeybladeVsBeyblade()
 {
     for (int i = 0; i < Main.maxProjectiles; i++)
     {
@@ -714,8 +732,8 @@ private void UpdateRailGrind()
 
 private void ApplyRailPhysics(BitsByte trackFlags)
 {
-    Projectile.gfxOffY = -16f;
-    
+   // Projectile.gfxOffY = -8f;
+    // If you ever feel like making it float.
     Projectile.velocity.Y = 0f;
     if (trackFlags[Minecart.Flag_BoostLeft])
         Projectile.velocity.X -= Minecart.BoosterSpeed;
@@ -756,7 +774,6 @@ private void ApplyNormalGravity()
 
         public override bool OnTileCollide(Vector2 oldVelocity)
         {
-            
             float bounceFactor = (Stats.Density < 0.5f) ? 1.0f : 0.5f; 
             if (Projectile.velocity.Y != oldVelocity.Y)
                 Projectile.velocity.Y = -oldVelocity.Y * bounceFactor;

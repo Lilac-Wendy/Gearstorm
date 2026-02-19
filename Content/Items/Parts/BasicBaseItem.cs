@@ -20,7 +20,7 @@ namespace Gearstorm.Content.Items.Parts
         public BeybladeStats.BeybladePartType PartType => BeybladeStats.BeybladePartType.Base;
         public override void SetStaticDefaults()
         {
-            Main.RegisterItemAnimation(Item.type, new DrawAnimationVertical(5, 2));
+            Main.RegisterItemAnimation(Item.type, new DrawAnimationVertical(5, 8));
         }
         public override void SetDefaults()
         {

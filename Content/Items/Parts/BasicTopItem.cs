@@ -8,7 +8,7 @@ namespace Gearstorm.Content.Items.Parts
 {
     public class BasicTopItem : ModItem, BeybladeStats.IHasBeybladeStats
     {
-        public override string Texture => "Gearstorm/Assets/Items/Parts/Top_Default";
+        public override string Texture => "Gearstorm/Assets/Items/Parts/Top_Iron";
 
         public BeybladeStats Stats => new BeybladeStats 
         {  
@@ -20,14 +20,14 @@ namespace Gearstorm.Content.Items.Parts
 
         public override void SetStaticDefaults()
         {
-            Main.RegisterItemAnimation(Item.type, new DrawAnimationVertical(5, 2));
+            // O primeiro parâmetro é o tempo entre frames, o segundo é a quantidade de frames
+            Main.RegisterItemAnimation(Item.type, new DrawAnimationVertical(5, 8));
         }
-
 
         public override void SetDefaults()
         {
-            Item.width = 44;
-            Item.height = 9;
+            Item.width = 46;
+            Item.height = 10; // AQUI: Apenas a altura de UM frame
             Item.maxStack = 1;
             Item.value = Item.sellPrice(silver: 2);
             Item.rare = ItemRarityID.White;

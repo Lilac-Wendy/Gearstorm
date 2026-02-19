@@ -15,8 +15,7 @@ namespace Gearstorm.Content.Projectiles
         public override string Texture =>
             "Terraria/Images/Projectile_" + ProjectileID.MoonBoulder;
         private PrimitiveTrail trailA;
-        private PrimitiveTrail trailB;
-        
+
 
         public override void SetDefaults()
         {
@@ -117,66 +116,50 @@ namespace Gearstorm.Content.Projectiles
 
         public override void OnSpawn(IEntitySource source)
         {
-            trailA = new PrimitiveTrail(); // agora é a única trail usada
+            trailA = new PrimitiveTrail();
 
-            Color vortexWhiteCyan = new(190, 255, 210);
-            Color vortexCyan      = new(0, 255, 170);
-            Color vortexGreen     = new(0, 200, 90);
-            Color tealBright      = new(120, 255, 140);
-            Color voidDark        = new(5, 40, 25);
+            Color electricWhite = new(220, 255, 240);
+            Color neonCyan      = new(0, 255, 255);
+            Color vortexTeal    = new(0, 180, 120);
+            Color deepVoid      = new(10, 30, 20);
 
-            // ==========================
-            // WIDTH
-            // ==========================
+            Color[] palette = new[] { electricWhite, neonCyan, vortexTeal, deepVoid };
+
             trailA.WidthFunction = progress =>
             {
-                progress = MathHelper.Clamp(progress, 0f, 1f);
-                float t = MathHelper.SmoothStep(0f, 1f, progress);
-
-                // mais fino perto do centro
-                return 4f + 24f * t;
+                float pulse = (float)Math.Sin(Main.GlobalTimeWrappedHourly * 12f);
+                float ease = (float)Math.Sin(progress * MathHelper.PiOver2);
+                return MathHelper.Lerp(10f, 20f, ease) + pulse * 2f;
             };
 
-            // ==========================
-            // COLOR (gradiente forte)
-            // ==========================
             trailA.ColorFunction = progress =>
             {
-                progress = MathHelper.Clamp(progress, 0f, 1f);
+                float time = Main.GlobalTimeWrappedHourly;
 
-                // ponta externa clara
-                float t = 1f - progress;
+                // Oscilação rápida ao longo da trail
+                float wave = (float)Math.Sin(progress * 20f - time * 10f);
 
-                // curva mais agressiva para mudar mais rápido
-                t = (float)Math.Pow(t, 0.65f);
+                // Mistura progress + tempo
+                float t = progress * 3f + time * 2f + wave * 0.3f;
 
-                Color color;
+                // Índices dinâmicos
+                int indexA = (int)Math.Abs(Math.Floor(t)) % palette.Length;
+                int indexB = (indexA + 1 + (int)(time * 3f)) % palette.Length;
 
-                if (t < 0.4f)
+                float lerpFactor = t - (float)Math.Floor(t);
+
+                Color result = Color.Lerp(palette[indexA], palette[indexB], lerpFactor);
+
+                // Flash energético no início
+                if (progress < 0.15f)
                 {
-                    color = Color.Lerp(vortexWhiteCyan, vortexCyan, t / 0.4f);
-                }
-                else if (t < 0.75f)
-                {
-                    color = Color.Lerp(
-                        vortexCyan,
-                        vortexGreen,
-                        (t - 0.4f) / 0.35f
-                    );
-                }
-                else
-                {
-                    color = Color.Lerp(
-                        vortexGreen,
-                        voidDark,
-                        (t - 0.75f) / 0.25f
-                    );
+                    float flash = 1.5f + (float)Math.Sin(time * 30f) * 0.5f;
+                    result *= flash;
                 }
 
-                float alpha = MathHelper.SmoothStep(0f, 1f, progress);
-
-                return color * alpha;
+                return result;
             };
+
         }
 
 
